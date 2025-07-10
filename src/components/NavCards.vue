@@ -28,21 +28,25 @@ const goTo = (page) => {
 <style scoped>
 .nav-cards {
   display: flex;
-  gap: 1rem;
-  justify-content: space-around;
-  margin-top: 1rem;
-  padding: 1rem;
+  gap: 2rem;
+  justify-content: space-between;
+  margin-top: 2rem;
 }
+
 .card {
+  flex: 1;
   background: #e0f7fa;
   border-radius: 10px;
-  padding: 1rem;
-  width: 30%;
+  padding: 2rem;
+  text-align: center;
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   cursor: pointer;
   transition: transform 0.2s;
+  min-width: 200px;
 }
+
 .card:hover {
-  transform: scale(1.03);
+  transform: scale(1.05);
 }
 </style>
+
