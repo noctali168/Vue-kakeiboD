@@ -1,6 +1,11 @@
 <template>
+  <CostAutoAdd />
   <router-link to="/" class="back-home">🏠 ホームへ戻る</router-link>
 </template>
+
+<script setup>
+import CostAutoAdd from './CostAutoAdd.vue';
+</script>
 
 <style scoped>
 .back-home {

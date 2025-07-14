@@ -1,26 +1,60 @@
 <template>
   <BackHome />
+
   <div class="notify-page">
     <h2>通知・設定</h2>
 
-    <form @submit.prevent="saveName">
-      <label>
-        あなたの名前：
-        <input v-model="username" type="text" placeholder="例: てつこ" />
-      </label>
-      <button type="submit">保存</button>
-    </form>
+    <section class="accordion">
+      <header @click="toggleSection('name')" class="accordion-header">
+        あなたの名前
+        <span>{{ isOpen.name ? '▲' : '▼' }}</span>
+      </header>
+      <div v-show="isOpen.name" class="accordion-content">
+        <NameSetting/>
+      </div>
+    </section>
 
-    <p v-if="saved">✅ 名前を保存しました！</p>
+    <section class="accordion">
+      <header @click="toggleSection('reset')" class="accordion-header">
+        データリセット
+        <span>{{ isOpen.reset ? '▲' : '▼' }}</span>
+      </header>
+      <div v-show="isOpen.reset" class="accordion-content">
+        <Reset />
+      </div>
+    </section>
+
+    <section class="accordion">
+      <header @click="toggleSection('fixedCost')" class="accordion-header">
+        固定費設定
+        <span>{{ isOpen.fixedCost ? '▲' : '▼' }}</span>
+      </header>
+      <div v-show="isOpen.fixedCost" class="accordion-content">
+        <FixedCost />
+      </div>
+    </section>
   </div>
 </template>
 
 <script setup>
+import NameSetting from '../components/NameSetting.vue'
+import Reset from '../components/Reset.vue'
+import FixedCost from '../components/FixedCost.vue'
 import BackHome from '../components/BackHome.vue'
 import { ref, onMounted } from 'vue'
 
 const username = ref('')
 const saved = ref(false)
+
+const isOpen = ref({
+  name: true,
+  reset: false,
+  fixedCost: false,
+})
+
+const toggleSection = (key) => {
+  isOpen.value[key] = !isOpen.value[key]
+}
 
 onMounted(() => {
   username.value = localStorage.getItem('kakeibo-username') || ''
@@ -34,8 +68,31 @@ const saveName = () => {
 </script>
 
 <style scoped>
-form {
+.notify-page {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+.accordion {
+  border: 1px solid #ccc;
+  border-radius: 5px;
   margin-top: 1rem;
+}
+.accordion-header {
+  background-color: #4caf50;
+  color: white;
+  padding: 0.8rem 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  user-select: none;
+}
+.accordion-content {
+  padding: 1rem;
+  background: #f9f9f9;
+}
+form {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -50,5 +107,9 @@ button {
   padding: 0.5rem;
   border: none;
   border-radius: 5px;
+  cursor: pointer;
+}
+button:hover {
+  background-color: #388e3c;
 }
 </style>
