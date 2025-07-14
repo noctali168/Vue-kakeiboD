@@ -1,16 +1,24 @@
 <template>
-  <section class="character-area">
-    <p>こんにちは！今日も記録を忘れずにね 👀</p>
+  <section class="character-section">
+    <h2 v-if="username">{{ username }}さん、こんにちは！</h2>
+    <h2 v-else>こんにちは！</h2>
   </section>
 </template>
 
 <script setup>
-/*  */
+import { ref, onMounted } from 'vue'
+
+const username = ref('')
+
+onMounted(() => {
+  username.value = localStorage.getItem('kakeibo-username') || ''
+})
 </script>
 
 <style scoped>
-.character-area {
-  padding: 1rem;
-  background: #f0f0f0;
+.character-section {
+  text-align: center;
+  font-size: 1.5rem;
+  margin-top: 1rem;
 }
 </style>
