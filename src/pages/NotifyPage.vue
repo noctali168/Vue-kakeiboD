@@ -25,6 +25,16 @@
     </section>
 
     <section class="accordion">
+      <header @click="toggleSection('reminder')" class="accordion-header">
+        リマインダー設定
+        <span>{{ isOpen.name ? '▲' : '▼' }}</span>
+      </header>
+      <div v-show="isOpen.name" class="accordion-content">
+        <ReminderSetting />
+      </div>
+    </section>
+
+    <section class="accordion">
       <header @click="toggleSection('fixedCost')" class="accordion-header">
         固定費設定
         <span>{{ isOpen.fixedCost ? '▲' : '▼' }}</span>
@@ -37,6 +47,7 @@
 </template>
 
 <script setup>
+import ReminderSetting from '../components/ReminderSetting.vue'
 import NameSetting from '../components/NameSetting.vue'
 import Reset from '../components/Reset.vue'
 import FixedCost from '../components/FixedCost.vue'
