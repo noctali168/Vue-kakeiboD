@@ -4,9 +4,11 @@
     <h2 v-else>こんにちは！</h2>
   </section>
   <SeasonDisplay />
+  <BirdCondition />
 </template>
 
 <script setup>
+import BirdCondition from './BirdCondition.vue'
 import SeasonDisplay from './SeasonDisplay.vue'
 import { ref, onMounted } from 'vue'
 
