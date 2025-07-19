@@ -33,35 +33,31 @@ const props = defineProps({
   totalIncome: { type: Number, required: true },
   totalExpense: { type: Number, required: true },
 });
-const emit = defineEmits(['update:goal']);
+const emit = defineEmits(['update:goal', 'update:achievementRate']);
 
 const localGoal = ref(props.goalAmount);
 
 watch(() => props.goalAmount, (newVal) => { localGoal.value = newVal; });
 
 const updateGoal = () => {
-  // マイナス値が入力された場合は0に補正する
-  if (localGoal.value < 0) {
-    localGoal.value = 0;
-  }
+  if (localGoal.value < 0) { localGoal.value = 0; }
   emit('update:goal', localGoal.value);
 };
 
 const balance = computed(() => props.totalIncome - props.totalExpense);
-
-// ★変更点: 達成率の計算方法を修正
 const achievementRate = computed(() => {
   if (localGoal.value <= 0) return 0;
-  // マイナスや100%以上もそのまま計算する
   return (balance.value / localGoal.value) * 100;
 });
-
-// ★変更点: プログレスバーの幅を計算
 const progressBarWidth = computed(() => {
   const rate = achievementRate.value;
   if (rate <= 0) return 0;
   if (rate > 100) return 100;
   return rate;
+});
+
+watch(achievementRate, (newRate) => {
+  emit('update:achievementRate', newRate);
 });
 </script>
 
@@ -72,7 +68,6 @@ h3 { margin-top: 0; text-align: center; font-weight: 600; margin-bottom: 1.5rem;
 .goal-setting input { width: 120px; padding: 0.5rem; border: none; border-radius: 5px; text-align: right; font-size: 1.1em; font-weight: bold; }
 .progress-bar-container { width: 100%; height: 20px; background-color: rgba(255, 255, 255, 0.3); border-radius: 10px; overflow: hidden; margin-bottom: 1rem; }
 .progress-bar { height: 100%; background-color: #4caf50; border-radius: 10px; transition: width 0.5s ease-in-out, background-color 0.5s; }
-/* ★変更点: 100%を超えた時の色 */
 .progress-bar.over-100 { background-color: #ffc107; }
 .summary { display: flex; justify-content: space-between; }
 .summary-item { display: flex; flex-direction: column; }

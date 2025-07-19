@@ -42,42 +42,28 @@
 
 <script setup>
 import { ref } from 'vue';
-
-const props = defineProps({
-  categories: { type: Object, required: true }
-});
+const props = defineProps({ categories: { type: Object, required: true } });
 const emit = defineEmits(['update']);
-
 const newCategoryName = ref('');
 const newCategoryType = ref('支出');
 const newCategoryColor = ref('#ff6384');
-
 const addCategory = () => {
   if (!newCategoryName.value.trim()) return;
   const newCategories = JSON.parse(JSON.stringify(props.categories));
   if (!newCategories[newCategoryType.value].some(c => c.name === newCategoryName.value)) {
-    newCategories[newCategoryType.value].push({
-      name: newCategoryName.value,
-      color: newCategoryColor.value
-    });
+    newCategories[newCategoryType.value].push({ name: newCategoryName.value, color: newCategoryColor.value });
     emit('update', newCategories);
   }
   newCategoryName.value = '';
 };
-
 const deleteCategory = (type, name) => {
-  if (name === '固定費') {
-    alert('「固定費」カテゴリは削除できません。');
-    return;
-  }
+  if (name === '固定費') { alert('「固定費」カテゴリは削除できません。'); return; }
   if (confirm(`カテゴリ「${name}」を削除しますか？`)) {
     const newCategories = JSON.parse(JSON.stringify(props.categories));
     newCategories[type] = newCategories[type].filter(cat => cat.name !== name);
     emit('update', newCategories);
   }
 };
-
-// ★変更点: 色を更新するための新しい関数
 const updateColor = (type, index, newColor) => {
   const newCategories = JSON.parse(JSON.stringify(props.categories));
   newCategories[type][index].color = newColor;
@@ -87,16 +73,7 @@ const updateColor = (type, index, newColor) => {
 
 <style scoped>
 .color-picker { padding: 0; height: 40px; border: 1px solid #ccc; }
-/* ★変更点: リスト内の小さなカラーピッカー用のスタイル */
-.color-picker-small {
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-right: 8px;
-}
+.color-picker-small { width: 24px; height: 24px; padding: 0; border: none; border-radius: 4px; cursor: pointer; margin-right: 8px; }
 h3, h4, h5 { margin-top: 0; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr 0.5fr; gap: 1rem; margin-bottom: 1rem; align-items: flex-end; }
 .list-container { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1.5rem; border-top: 1px solid #eee; padding-top: 1.5rem; }
