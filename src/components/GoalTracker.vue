@@ -3,7 +3,7 @@
     <h3>今月の目標達成率</h3>
     <div class="goal-setting">
       <span>目標金額：</span>
-      <input type="number" min="0" v-model.number="localGoal" @change="updateGoal" />円
+      <input type="number" min="1" v-model.number="localGoal" @change="updateGoal" />円
     </div>
 
     <div class="progress-bar-container">
@@ -40,15 +40,21 @@ const localGoal = ref(props.goalAmount);
 watch(() => props.goalAmount, (newVal) => { localGoal.value = newVal; });
 
 const updateGoal = () => {
-  if (localGoal.value < 0) { localGoal.value = 0; }
+  // ★変更点②: 1円未満の値が入力された場合は1に補正する
+  if (localGoal.value < 1) {
+    localGoal.value = 1;
+  }
   emit('update:goal', localGoal.value);
 };
 
 const balance = computed(() => props.totalIncome - props.totalExpense);
+
 const achievementRate = computed(() => {
-  if (localGoal.value <= 0) return 0;
+  // ★変更点③: 目標が1円未満の場合は0%を返す
+  if (localGoal.value < 1) return 0;
   return (balance.value / localGoal.value) * 100;
 });
+
 const progressBarWidth = computed(() => {
   const rate = achievementRate.value;
   if (rate <= 0) return 0;
