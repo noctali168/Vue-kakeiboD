@@ -25,7 +25,7 @@ const ratingLevels = [
   {
     label: '非常に良い',
     comment: '素晴らしい家計管理！貯金もバッチリですね！',
-    image: '/seityou.png'// ←あとで画像パスを設定してもOK
+    image: '/seityou.png' // ←あとで画像パスを設定してもOK
   },
   {
     label: '良い',
@@ -44,9 +44,14 @@ const ratingLevels = [
   },
   {
     label: '非常に悪い',
-    comment: '赤字続き...対策を考えよう！',
+    comment: '対策を考えよう！',
     image: '/tamago.png'
-  }
+  },
+  {
+    label: '対策必須',
+    comment: '深刻な状況です。すぐに対策を考えましょう！', // ← 元の「非常に悪い」を修正
+    image: '/yakitori.png'
+  }
 ]
 
 const ratingData = ref(null)
@@ -72,11 +77,12 @@ function calculateMonthlyBalance(records) {
 }
 
 function getRating(balance) {
-  if (balance >= 50000) return ratingLevels[0]
-  if (balance >= 20000) return ratingLevels[1]
-  if (balance >= 0)     return ratingLevels[2]
-  if (balance >= -20000) return ratingLevels[3]
-  return ratingLevels[4]
+  if (balance >= 200) return ratingLevels[0]
+  if (balance >= 100) return ratingLevels[1]
+  if (balance >= 50) return ratingLevels[2]
+  if (balance >= 25) return ratingLevels[3]
+  if (balance >= 0) return ratingLevels[4]
+  return ratingLevels[5]
 }
 
 onMounted(() => {
