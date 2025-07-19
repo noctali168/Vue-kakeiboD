@@ -1,72 +1,87 @@
 <template>
   <div class="component-container">
     <h3>日々の記録</h3>
-    <form @submit.prevent="handleSubmit">
-       <div class="form-grid">
-        <label>区分：
-          <select v-model="form.type" required>
-            <option value="支出">支出</option>
-            <option value="収入">収入</option>
-          </select>
-        </label>
-        <label>カテゴリ：<input v-model="form.category" required /></label>
-        <label>名前：<input v-model="form.name" required /></label>
-        <label>金額：<input type="number" v-model.number="form.amount" required /></label>
+    <form @submit.prevent="handleSubmit" class="vertical-form">
+      <label>区分：
+        <select v-model="form.type" required @change="form.category = ''">
+          <option value="支出">支出</option>
+          <option value="収入">収入</option>
+        </select>
+      </label>
+      <label>カテゴリ：
+        <select v-model="form.category" required>
+          <option disabled value="">選択してください</option>
+          <option v-for="cat in categories[form.type]" :key="cat.name" :value="cat.name">{{ cat.name }}</option>
+        </select>
+      </label>
+      <label>名前：<input v-model="form.name" required /></label>
+      <label>金額：<input type="number" v-model.number="form.amount" required /></label>
+      <div class="form-actions">
+        <button type="submit" class="add-button">{{ form.id ? '更新' : '追加' }}</button>
+        <button v-if="form.id" @click="cancelEdit" type="button" class="cancel-button">ｷｬﾝｾﾙ</button>
       </div>
-      <button type="submit" class="add-button">{{ form.id ? '更新' : '追加' }}</button>
-      <button v-if="form.id" @click="cancelEdit" type="button" class="cancel-button">キャンセル</button>
     </form>
-
     <div class="list-container">
       <h4>全記録リスト</h4>
-      <ul>
-        <li class="record" v-for="record in records" :key="record.id">
-          <span class="date">{{ record.date }}</span>
-          <span class="name">[{{ record.category }}] {{ record.name }}</span>
-          <span class="amount" :class="record.type === '収入' ? 'income' : 'expense'">
-            {{ record.amount.toLocaleString() }} 円
-          </span>
-          <div class="item-actions">
+      <ul v-if="records.length > 0" class="record-list">
+        <li class="record-item" v-for="record in records" :key="record.id">
+          <div class="color-bar" :style="{ backgroundColor: getCategoryColor(record.category, record.type) }"></div>
+          <div class="record-content">
+            <div class="record-header">
+              <span class="record-name">{{ record.name }}</span>
+              <span class="record-amount" :class="record.type === '収入' ? 'income' : 'expense'">
+                {{ record.type === '収入' ? '+' : '-' }} {{ record.amount.toLocaleString() }} 円
+              </span>
+            </div>
+            <div class="record-footer">
+              <span class="record-category">{{ record.category }}</span>
+              <span class="record-date">{{ record.date }}</span>
+            </div>
+          </div>
+          <div class="record-actions">
             <button @click="$emit('edit', record)" class="edit-button">✏️</button>
             <button @click="$emit('delete', record.id)" class="delete-button">🗑️</button>
           </div>
         </li>
       </ul>
-      <p v-if="!records.length">まだ記録がありません。</p>
+      <p v-else>まだ記録がありません。</p>
     </div>
   </div>
 </template>
 
 <script setup>
 import { reactive, watch } from 'vue';
-
-const props = defineProps({
-  records: { type: Array, required: true },
-  recordToEdit: { type: Object, default: null }
-});
+const props = defineProps({ records: { type: Array, required: true }, recordToEdit: { type: Object, default: null }, categories: { type: Object, required: true } });
 const emit = defineEmits(['submit', 'delete', 'edit', 'cancelEdit']);
-const form = reactive({ id: null, type: '支出', category: '', name: '', amount: null });
-
-watch(() => props.recordToEdit, (newVal) => {
-  Object.assign(form, newVal || { id: null, type: '支出', category: '', name: '', amount: null });
-}, { deep: true });
-
-const handleSubmit = () => emit('submit', { ...form });
+const createEmptyForm = () => ({ id: null, type: '支出', category: '', name: '', amount: null });
+const form = reactive(createEmptyForm());
+watch(() => props.recordToEdit, (newVal) => { Object.assign(form, newVal || createEmptyForm()); }, { deep: true });
+const handleSubmit = () => { emit('submit', { ...form }); if (!form.id) { Object.assign(form, createEmptyForm()); }};
 const cancelEdit = () => emit('cancelEdit');
+const getCategoryColor = (categoryName, type) => {
+  const category = props.categories[type]?.find(c => c.name === categoryName);
+  return category ? category.color : '#cccccc';
+};
 </script>
 
 <style scoped>
-h3, h4 { margin-top: 0; }
-.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
-.list-container { margin-top: 1.5rem; border-top: 1px solid #eee; padding-top: 1.5rem; }
-ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.8rem; }
-.record { display: grid; grid-template-columns: 100px 1fr auto auto; align-items: center; gap: 1rem; background: #f9f9f9; padding: 0.8rem; border-radius: 5px; }
-.date { font-size: 0.9em; color: #666; }
-.amount.income { color: #198754; font-weight: bold; }
-.amount.expense { color: #dc3545; font-weight: bold; }
-.item-actions { display: flex; gap: 0.5rem; }
+.vertical-form { display: flex; flex-direction: column; gap: 1.2rem; }
+.vertical-form label { display: flex; flex-direction: column; gap: 0.5rem; font-weight: bold; font-size: 0.9em; }
+.vertical-form input, .vertical-form select { padding: 0.8rem; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
+.form-actions { display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1rem; }
 .add-button { background-color: #0d6efd; }
 .cancel-button { background-color: #6c757d; }
-.edit-button { background-color: #ffc107; }
-.delete-button { background-color: #dc3545; }
+.list-container { margin-top: 2rem; border-top: 1px solid #eee; padding-top: 1.5rem; }
+.record-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 1rem; }
+.record-item { display: flex; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; }
+.color-bar { width: 8px; flex-shrink: 0; }
+.record-content { flex-grow: 1; padding: 0.8rem 1rem; }
+.record-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.25rem; }
+.record-name { font-weight: bold; font-size: 1.1em; }
+.record-amount { font-weight: bold; font-size: 1.2em; }
+.record-amount.income { color: #198754; }
+.record-amount.expense { color: #dc3545; }
+.record-footer { display: flex; justify-content: space-between; font-size: 0.85em; color: #666; }
+.record-actions { display: flex; align-items: center; background-color: #f8f9fa; padding: 0 0.5rem; }
+.edit-button, .delete-button { background: none; color: #666; }
 </style>
