@@ -41,7 +41,7 @@ const ratingLevels = [
   { comment: 'まずまず。目標まであと少し！', image: '/hinaedori.png' },
   { comment: 'ちょっと厳しいかも？支出を見直そう！', image: '/hina.png' },
   { comment: 'ピンチ！目標達成は難しそうです…', image: '/tamago.png' },
-  { comment: '赤字です！すぐに対策を考えましょう！', image: '/yakitori.png' }
+  { comment: 'すぐに対策を考えましょう！', image: '/yakitori.png' }
 ];
 
 // --- ★変更点3: 達成率の計算ロジックをコンポーネント内に移動 ---
