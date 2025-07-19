@@ -25,27 +25,27 @@ const ratingLevels = [
   {
     label: '非常に良い',
     comment: '素晴らしい家計管理！貯金もバッチリですね！',
-    image: null // ←あとで画像パスを設定してもOK
+    image: '/seityou.png'// ←あとで画像パスを設定してもOK
   },
   {
     label: '良い',
     comment: '順調です！この調子で！',
-    image: null
+    image: '/wakadori.png'
   },
   {
     label: '普通',
     comment: 'まずまず。無駄遣いには注意！',
-    image: null
+    image: '/hinadori.png'
   },
   {
     label: '悪い',
     comment: 'ちょっと使いすぎ？見直してみよう！',
-    image: null
+    image: '/hina.png'
   },
   {
     label: '非常に悪い',
     comment: '赤字続き...対策を考えよう！',
-    image: null
+    image: '/tamago.png'
   }
 ]
 
