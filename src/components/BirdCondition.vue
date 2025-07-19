@@ -1,16 +1,14 @@
 <template>
-  <section class="monthly-rating">
-    <h3>今月の家計評価</h3>
+  <section class="component-container monthly-rating">
+    <h3>今月の鳥の様子</h3>
 
     <div v-if="ratingData">
-      <!-- 画像が指定されていれば表示 -->
       <img
         v-if="ratingData.image"
         :src="ratingData.image"
         alt="評価画像"
         class="rating-image"
       />
-
       <p class="rating-comment">{{ ratingData.comment }}</p>
     </div>
     <p v-else>今月のデータがまだありません。</p>
@@ -18,100 +16,98 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 
-// 5段階評価（コメントと画像パス）
-const ratingLevels = [
-  {
-    label: '非常に良い',
-    comment: '素晴らしい家計管理！貯金もバッチリですね！',
-    image: '/seityou.png' // ←あとで画像パスを設定してもOK
-  },
-  {
-    label: '良い',
-    comment: '順調です！この調子で！',
-    image: '/wakadori.png'
-  },
-  {
-    label: '普通',
-    comment: 'まずまず。無駄遣いには注意！',
-    image: '/hinadori.png'
-  },
-  {
-    label: '悪い',
-    comment: 'ちょっと使いすぎ？見直してみよう！',
-    image: '/hina.png'
-  },
-  {
-    label: '非常に悪い',
-    comment: '対策を考えよう！',
-    image: '/tamago.png'
-  },
-  {
-    label: '対策必須',
-    comment: '深刻な状況です。すぐに対策を考えましょう！', // ← 元の「非常に悪い」を修正
-    image: '/yakitori.png'
-  }
-]
+// --- ★変更点1: propsを削除し、コンポーネント内にデータを持つ ---
+const records = ref([]);
+const goalAmount = ref(50000); // デフォルト値
 
-const ratingData = ref(null)
-
-function calculateMonthlyBalance(records) {
-  const now = new Date()
-  const thisMonth = now.toISOString().slice(0, 7)
-
-  let income = 0
-  let expense = 0
-
-  for (const record of records) {
-    if (record.date.slice(0, 7) === thisMonth) {
-      if (record.type === '収入') {
-        income += Number(record.amount)
-      } else if (record.type === '支出') {
-        expense += Number(record.amount)
-      }
-    }
+// --- ★変更点2: データを読み込む関数を作成 ---
+const loadData = () => {
+  const recData = localStorage.getItem('kakeibo-records');
+  if (recData) {
+    records.value = JSON.parse(recData);
   }
+  const savedGoal = localStorage.getItem('kakeibo-goal');
+  if (savedGoal) {
+    goalAmount.value = Number(savedGoal);
+  }
+};
 
-  return income - expense
-}
+// 6段階評価（コメントと画像パス）
+const ratingLevels = [
+  { comment: '絶好調！目標達成おめでとうございます！', image: '/seityou.png' },
+  { comment: '順調です！この調子でいきましょう！', image: '/wakadori.png' },
+  { comment: 'まずまず。目標まであと少し！', image: '/hinaedori.png' },
+  { comment: 'ちょっと厳しいかも？支出を見直そう！', image: '/hina.png' },
+  { comment: 'ピンチ！目標達成は難しそうです…', image: '/tamago.png' },
+  { comment: '赤字です！すぐに対策を考えましょう！', image: '/yakitori.png' }
+];
 
-function getRating(balance) {
-  if (balance >= 200) return ratingLevels[0]
-  if (balance >= 100) return ratingLevels[1]
-  if (balance >= 50) return ratingLevels[2]
-  if (balance >= 25) return ratingLevels[3]
-  if (balance >= 0) return ratingLevels[4]
-  return ratingLevels[5]
-}
+// --- ★変更点3: 達成率の計算ロジックをコンポーネント内に移動 ---
+const getJSTDate = () => new Date(Date.now() + ((new Date().getTimezoneOffset() + (9 * 60)) * 60 * 1000));
 
+const monthlyIncome = computed(() => {
+  const currentMonth = getJSTDate().toISOString().slice(0, 7);
+  return records.value
+    .filter(r => r.date.startsWith(currentMonth) && r.type === '収入')
+    .reduce((sum, record) => sum + (Number(record.amount) || 0), 0);
+});
+
+const monthlyExpense = computed(() => {
+  const currentMonth = getJSTDate().toISOString().slice(0, 7);
+  return records.value
+    .filter(r => r.date.startsWith(currentMonth) && r.type === '支出')
+    .reduce((sum, record) => sum + (Number(record.amount) || 0), 0);
+});
+
+const balance = computed(() => monthlyIncome.value - monthlyExpense.value);
+
+const achievementRate = computed(() => {
+  if (goalAmount.value <= 0) return 0;
+  return (balance.value / goalAmount.value) * 100;
+});
+
+// 達成率に応じて評価を決定する
+const ratingData = computed(() => {
+  const rate = achievementRate.value;
+  if (rate < 0) return ratingLevels[5];
+  if (rate >= 100) return ratingLevels[0];
+  if (rate >= 80) return ratingLevels[1];
+  if (rate >= 50) return ratingLevels[2];
+  if (rate >= 20) return ratingLevels[3];
+  return ratingLevels[4];
+});
+
+
+// --- ★変更点4: データの変更を検知してリアルタイムに更新 ---
+// コンポーネントが表示された時に、localStorageからデータを読み込む
 onMounted(() => {
-  const records = JSON.parse(localStorage.getItem('kakeibo-records') || '[]')
-  if (records.length === 0) return
-
-  const balance = calculateMonthlyBalance(records)
-  ratingData.value = getRating(balance)
-})
+  loadData();
+  // 他のタブやウィンドウでlocalStorageが変更されたことを検知するイベント
+  window.addEventListener('storage', loadData);
+});
+// コンポーネントが非表示になったら、イベント検知を解除する
+onUnmounted(() => {
+  window.removeEventListener('storage', loadData);
+});
 </script>
 
 <style scoped>
 .monthly-rating {
-  margin: 1.5rem;
-  padding: 1rem;
-  background: #fefefe;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
   text-align: center;
 }
-
+/* ★変更点5: 画像のサイズを固定 */
 .rating-image {
   width: 120px;
-  height: auto;
-  margin-bottom: 1rem;
+  height: 120px;
+  margin-bottom: 0.5rem;
+  object-fit: contain; /* アスペクト比を保ちつつ、コンテナに収める */
 }
-
 .rating-comment {
   font-size: 1.2rem;
-  font-weight: 500;
+  font-weight: bold;
+  color: #333;
+  min-height: 2.4rem; /* コメントの高さが変動してもレイアウトが崩れないように */
 }
 </style>
