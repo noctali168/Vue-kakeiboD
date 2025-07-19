@@ -1,19 +1,31 @@
 <template>
   <section class="kuji-area">
-    <h2>凶のくじ引きコーナー</h2>
+    <h2>今日のくじ引きコーナー</h2>
     <button v-if="!hasDrawnToday" @click="drawKuji">くじを引く！</button>
-    <p v-if="result" class="result">今日の結果：{{ result }}</p>
+
+    <div v-if="result" class="result-area">
+      <div class="result-content">
+        <p class="result-text">今日の結果：{{ result.label }}</p>
+        <img :src="result.image" alt="くじ結果画像" class="result-img" />
+      </div>
+    </div>
   </section>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 
-const result = ref('')
+const result = ref(null)
 const hasDrawnToday = ref(false)
 
 const kujiList = [
-  '大吉', '中吉', '小吉', '吉', '末吉', '凶', '大凶'
+  { label: '大吉', image: '/partyparrt-A.gif' },
+  { label: '中吉', image: '/partyparrt-A.gif' },
+  { label: '小吉', image: '/partyparrt-B.gif' },
+  { label: '吉',    image: '/partyparrt-B.gif' },
+  { label: '末吉', image: '/partyparrt-B.gif' },
+  { label: '凶',    image: '/partyparrt-C.gif' },
+  { label: '大凶', image: '/partyparrt-C.gif' }
 ]
 
 function drawKuji() {
@@ -22,17 +34,22 @@ function drawKuji() {
 
   const today = new Date().toISOString().slice(0, 10)
   localStorage.setItem('kuji-last-date', today)
-  localStorage.setItem('kuji-result', result.value)
+  localStorage.setItem('kuji-result-label', result.value.label)
+  localStorage.setItem('kuji-result-image', result.value.image)
   hasDrawnToday.value = true
 }
 
 onMounted(() => {
   const today = new Date().toISOString().slice(0, 10)
   const lastDate = localStorage.getItem('kuji-last-date')
-  const savedResult = localStorage.getItem('kuji-result')
+  const savedLabel = localStorage.getItem('kuji-result-label')
+  const savedImage = localStorage.getItem('kuji-result-image')
 
-  if (lastDate === today && savedResult) {
-    result.value = savedResult
+  if (lastDate === today && savedLabel && savedImage) {
+    result.value = {
+      label: savedLabel,
+      image: savedImage
+    }
     hasDrawnToday.value = true
   }
 })
@@ -43,6 +60,7 @@ onMounted(() => {
   margin-top: 2rem;
   text-align: center;
 }
+
 button {
   background-color: #ff6666;
   color: white;
@@ -53,13 +71,34 @@ button {
   cursor: pointer;
   transition: background-color 0.3s;
 }
+
 button:hover {
-  background-color: #ff3333;
+  background-color: #007702;
 }
-.result {
-  margin-top: 1rem;
+
+.result-area {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+.result-content {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap; /* スマホなどで狭い時に縦に折り返す */
+  justify-content: center;
+}
+
+.result-text {
   font-weight: bold;
   font-size: 1.5rem;
-  color: #cc0000;
+  color: #1e1e1e;
+}
+
+.result-img {
+  width: 150px;
+  height: auto;
+  border-radius: 8px;
 }
 </style>
