@@ -1,48 +1,74 @@
 <template>
   <div class="component-container">
     <div class="header">
-      <h3>今月のグラフ</h3>
-      <div class="toggle-buttons">
-        <button @click="chartMode = '支出'" :class="{ active: chartMode === '支出' }">支出</button>
-        <button @click="chartMode = '収入'" :class="{ active: chartMode === '収入' }">収入</button>
-      </div>
+      <h3>{{ currentMonthYear }}の収支グラフ</h3>
     </div>
-    <div class="chart-wrapper">
-      <Pie v-if="chartData.labels.length > 0" :data="chartData" :options="chartOptions" />
-      <p v-else>今月の{{ chartMode }}データがありません。</p>
+
+    <div class="charts-container">
+      <div class="chart-section">
+        <h4>支出</h4>
+        <div class="chart-wrapper">
+          <Pie v-if="expenseChartData.labels.length > 0" :data="expenseChartData" :options="chartOptions" />
+          <p v-else>今月の支出データがありません。</p>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <h4>収入</h4>
+        <div class="chart-wrapper">
+          <Pie v-if="incomeChartData.labels.length > 0" :data="incomeChartData" :options="chartOptions" />
+          <p v-else>今月の収入データがありません。</p>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import { Pie } from 'vue-chartjs';
 import { Chart as ChartJS, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 
 ChartJS.register(Title, Tooltip, Legend, ArcElement);
 
-// ★変更点: incomeData と categories 全体を受け取る
 const props = defineProps({
   expenseData: { type: Object, required: true },
   incomeData: { type: Object, required: true },
   categories: { type: Object, required: true }
 });
 
-// ★変更点: 現在表示中のグラフモードを管理する変数
-const chartMode = ref('支出'); // 初期表示は支出グラフ
+// 現在の年月を取得するComputedプロパティを追加
+const currentMonthYear = computed(() => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1; // getMonth()は0から始まるため+1
+  return `${year}年${month}月`;
+});
 
-// ★変更点: chartModeに応じてグラフデータを動的に生成する
-const chartData = computed(() => {
-  const isExpense = chartMode.value === '支出';
-  const dataObject = isExpense ? props.expenseData : props.incomeData;
-  const categoryList = isExpense ? props.categories.支出 : props.categories.収入;
-
-  const labels = Object.keys(dataObject);
-  const data = Object.values(dataObject);
+// 支出グラフのデータを生成
+const expenseChartData = computed(() => {
+  const labels = Object.keys(props.expenseData);
+  const data = Object.values(props.expenseData);
   
   const backgroundColors = labels.map(label => {
-    const category = categoryList.find(c => c.name === label);
-    return category ? category.color : '#cccccc';
+    const category = props.categories.支出.find(c => c.name === label);
+    return category ? category.color : '#cccccc'; // デフォルト色
+  });
+
+  return {
+    labels: labels,
+    datasets: [{ backgroundColor: backgroundColors, data: data }]
+  };
+});
+
+// 収入グラフのデータを生成
+const incomeChartData = computed(() => {
+  const labels = Object.keys(props.incomeData);
+  const data = Object.values(props.incomeData);
+  
+  const backgroundColors = labels.map(label => {
+    const category = props.categories.収入.find(c => c.name === label);
+    return category ? category.color : '#cccccc'; // デフォルト色
   });
 
   return {
@@ -56,43 +82,46 @@ const chartOptions = { responsive: true, maintainAspectRatio: false };
 
 <style scoped>
 .header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  text-align: center;
   margin-bottom: 1.5rem;
 }
 h3 {
   margin: 0;
+  font-size: 1.8rem; /* 月表示のタイトルを少し大きく */
+  color: #2c3e50; /* メインの色に近づける */
 }
-.toggle-buttons {
+
+.charts-container {
   display: flex;
-  border: 1px solid #0d6efd;
-  border-radius: 8px;
-  overflow: hidden;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2rem;
 }
-.toggle-buttons button {
-  padding: 0.5rem 1rem;
-  background-color: #fff;
-  color: #0d6efd;
-  border: none;
-  cursor: pointer;
-  font-weight: bold;
+
+.chart-section {
+  text-align: center;
+  flex: 1;
+  min-width: 280px;
+  max-width: 400px;
 }
-.toggle-buttons button.active {
-  background-color: #0d6efd;
-  color: white;
+
+.chart-section h4 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #333;
 }
+
 .chart-wrapper {
   position: relative;
   width: 100%;
-  max-width: 400px;
-  height: 400px;
+  height: 300px;
   margin: auto;
 }
 p {
   text-align: center;
-  margin-top: 2rem;
+  margin-top: 1rem;
   color: #888;
+  font-size: 0.9em;
 }
 .component-container {
   background-color: #fff;
@@ -100,5 +129,6 @@ p {
   border-radius: 8px;
   padding: 1.5rem;
   box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  margin-bottom: 2rem;
 }
 </style>

@@ -1,11 +1,20 @@
 <template>
-  <router-view />
+  <div id="app">
+    <Header />
+    <router-view />
+  </div>
 </template>
 
-<script setup>
-// 特に追加ロジックなし
+<script>
+import Header from './components/Header.vue'
+
+export default {
+  components: {
+    Header,
+  },
+}
 </script>
 
 <style>
-/* グローバルスタイルなどあればここに */
+/* 必要ならここに全体のスタイル */
 </style>

@@ -111,7 +111,20 @@ onMounted(() => {
 
 <style>
 body { background-color: #f0f2f5; font-family: sans-serif; }
-.kakeibo-app { max-width: 900px; margin: 2rem auto; }
+/* ★ここを修正します★ */
+.kakeibo-app {
+  max-width: 900px;
+  /* margin: 0 auto; はそのまま */
+  margin: 0 auto;
+  /* ヘッダーとの重なりを解消するためのpadding-top */
+  /* ヘッダーの高さ（約72px）+ 必要に応じたコンテンツ上部の余白（例: 2rem）*/
+  padding-top: calc(72px + 2rem);
+  padding-left: 1rem; /* 左右のpaddingも追加 */
+  padding-right: 1rem;
+  padding-bottom: 2rem; /* 下のpaddingも追加 */
+  
+  box-sizing: border-box; /* paddingを含めてサイズが計算されるようにする */
+}
 .component-container { background-color: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 1.5rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
 button { border: none; padding: 0.6rem 1.2rem; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; transition: opacity 0.2s; }
 button:hover { opacity: 0.85; }

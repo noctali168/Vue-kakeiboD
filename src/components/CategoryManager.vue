@@ -2,8 +2,7 @@
   <div class="component-container">
     <h3>カテゴリの管理</h3>
     <form @submit.prevent="addCategory">
-      <div class="form-grid">
-        <label>カテゴリの種類：
+      <div class="category-form-grid"> <label>カテゴリの種類：
           <select v-model="newCategoryType">
             <option value="支出">支出</option>
             <option value="収入">収入</option>
@@ -14,27 +13,26 @@
       </div>
       <button type="submit" class="add-button">カテゴリを追加</button>
     </form>
-    <div class="list-container">
-      <h4>登録済みカテゴリ</h4>
-      <div class="category-section">
-        <h5>支出</h5>
-        <ul>
-          <li v-for="(cat, index) in categories.支出" :key="cat.name">
-            <input type="color" :value="cat.color" @input="updateColor('支出', index, $event.target.value)" class="color-picker-small" />
-            <span>{{ cat.name }}</span>
-            <button @click="deleteCategory('支出', cat.name)" class="delete-button-small">x</button>
-          </li>
-        </ul>
-      </div>
-      <div class="category-section">
-        <h5>収入</h5>
-        <ul>
-          <li v-for="(cat, index) in categories.収入" :key="cat.name">
-            <input type="color" :value="cat.color" @input="updateColor('収入', index, $event.target.value)" class="color-picker-small" />
-            <span>{{ cat.name }}</span>
-            <button @click="deleteCategory('収入', cat.name)" class="delete-button-small">x</button>
-          </li>
-        </ul>
+    
+    <div class="list-container category-list-area"> <h4>登録済みカテゴリ</h4>
+      <div class="category-sections-grid"> <div class="category-section">
+          <h5>支出</h5>
+          <ul class="category-list"> <li v-for="(cat, index) in categories.支出" :key="cat.name">
+              <input type="color" :value="cat.color" @input="updateColor('支出', index, $event.target.value)" class="color-picker-small" />
+              <span>{{ cat.name }}</span>
+              <button @click="deleteCategory('支出', cat.name)" class="delete-button-small">x</button>
+            </li>
+          </ul>
+        </div>
+        <div class="category-section">
+          <h5>収入</h5>
+          <ul class="category-list"> <li v-for="(cat, index) in categories.収入" :key="cat.name">
+              <input type="color" :value="cat.color" @input="updateColor('収入', index, $event.target.value)" class="color-picker-small" />
+              <span>{{ cat.name }}</span>
+              <button @click="deleteCategory('収入', cat.name)" class="delete-button-small">x</button>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>
@@ -75,11 +73,70 @@ const updateColor = (type, index, newColor) => {
 .color-picker { padding: 0; height: 40px; border: 1px solid #ccc; }
 .color-picker-small { width: 24px; height: 24px; padding: 0; border: none; border-radius: 4px; cursor: pointer; margin-right: 8px; }
 h3, h4, h5 { margin-top: 0; }
-.form-grid { display: grid; grid-template-columns: 1fr 1fr 0.5fr; gap: 1rem; margin-bottom: 1rem; align-items: flex-end; }
-.list-container { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1.5rem; border-top: 1px solid #eee; padding-top: 1.5rem; }
-ul { list-style: none; padding: 0; margin: 0; }
-li { background: #f4f4f4; padding: 0.5rem 0.8rem; border-radius: 4px; margin-bottom: 0.5rem; display: flex; align-items: center; }
+
+/* フォームの内部Gridレイアウト */
+.category-form-grid { /* クラス名変更 */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* 各入力フィールドの最小幅を調整 */
+  gap: 1rem;
+  margin-bottom: 1rem;
+  align-items: flex-end;
+}
+
+/* リストコンテナの調整 */
+.list-container {
+  margin-top: 1.5rem;
+  border-top: 1px solid #eee;
+  padding-top: 1.5rem;
+}
+
+.category-sections-grid { /* 支出と収入のセクションを囲むグリッド */
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* 2つのカラムを均等に分ける */
+  gap: 2rem; /* 支出と収入セクションの間の余白 */
+}
+
+.category-section h5 {
+  margin-bottom: 0.8rem; /* 小見出しの下の余白 */
+}
+
+.category-list { /* カテゴリリストの調整 */
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 250px; /* リストの最大高さを設定 */
+  overflow-y: auto; /* 高さを超えたらスクロール */
+  border: 1px solid #eee; /* リストにボーダーを追加 */
+  border-radius: 6px;
+  padding: 0.5rem;
+}
+
+.category-list li { /* 各リストアイテムの調整 */
+  background: #f4f4f4;
+  padding: 0.5rem 0.8rem;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* 削除ボタンを右端に寄せる */
+  gap: 0.5rem; /* 要素間の余白 */
+}
+.category-list li:last-child {
+  margin-bottom: 0; /* 最後のアイテムの下マージンをなくす */
+}
+
 li > button { margin-left: auto; }
-.delete-button-small { background: #6c757d; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; padding: 0; }
-.add-button { background-color: #0d6efd; }
+.delete-button-small { background: #6c757d; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0; } /* 削除ボタンの調整 */
+.add-button { background-color: #0d6efd; margin-top: 1rem; } /* ボタン上部の余白を調整 */
+
+/* 画面幅が小さい場合のレスポンシブ対応 */
+@media (max-width: 768px) {
+  .category-form-grid,
+  .category-sections-grid {
+    grid-template-columns: 1fr; /* 1カラムにする（縦並び） */
+  }
+  .category-list {
+    max-height: none; /* スクロール制限を解除 */
+  }
+}
 </style>

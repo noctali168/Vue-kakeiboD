@@ -40,7 +40,6 @@ const localGoal = ref(props.goalAmount);
 watch(() => props.goalAmount, (newVal) => { localGoal.value = newVal; });
 
 const updateGoal = () => {
-  // ★変更点②: 1円未満の値が入力された場合は1に補正する
   if (localGoal.value < 1) {
     localGoal.value = 1;
   }
@@ -50,7 +49,6 @@ const updateGoal = () => {
 const balance = computed(() => props.totalIncome - props.totalExpense);
 
 const achievementRate = computed(() => {
-  // ★変更点③: 目標が1円未満の場合は0%を返す
   if (localGoal.value < 1) return 0;
   return (balance.value / localGoal.value) * 100;
 });
@@ -68,19 +66,35 @@ watch(achievementRate, (newRate) => {
 </script>
 
 <style scoped>
-.goal-tracker { background: linear-gradient(45deg, #4e54c8, #8f94fb); color: white; border-radius: 12px; padding: 1.5rem 2rem; }
+.goal-tracker {
+  background: #ffffff;
+  color: #2c3e50;
+  border-radius: 8px;
+  padding: 1.5rem 2rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  border: 1px solid #e0e0e0;
+  margin-bottom: 2rem;
+}
+
 h3 { margin-top: 0; text-align: center; font-weight: 600; margin-bottom: 1.5rem; }
 .goal-setting { display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem; }
-.goal-setting input { width: 120px; padding: 0.5rem; border: none; border-radius: 5px; text-align: right; font-size: 1.1em; font-weight: bold; }
-.progress-bar-container { width: 100%; height: 20px; background-color: rgba(255, 255, 255, 0.3); border-radius: 10px; overflow: hidden; margin-bottom: 1rem; }
-.progress-bar { height: 100%; background-color: #4caf50; border-radius: 10px; transition: width 0.5s ease-in-out, background-color 0.5s; }
-.progress-bar.over-100 { background-color: #ffc107; }
-.summary { display: flex; justify-content: space-between; }
+.goal-setting input {
+  width: 120px; padding: 0.5rem; border: 1px solid #ddd;
+  border-radius: 8px; text-align: right; font-size: 1.1em; font-weight: bold;
+  color: #2c3e50;
+  background-color: #ffffff; /* ★ここを追加します★ 入力欄の背景を白に設定 */
+}
+.progress-bar-container { width: 100%; height: 20px; background-color: #e0e0e0;
+  border-radius: 10px; overflow: hidden; margin-bottom: 1rem; }
+.progress-bar { height: 100%; background-color: #1abc9c;
+  border-radius: 10px; transition: width 0.5s ease-in-out, background-color 0.5s; }
+.progress-bar.over-100 { background-color: #ff9800; }
+.summary { display: flex; justify-content: space-between; color: #2c3e50; }
 .summary-item { display: flex; flex-direction: column; }
 .summary-item.text-right { text-align: right; }
 .label { font-size: 0.9em; opacity: 0.8; }
 .value { font-size: 1.4em; font-weight: bold; }
-.value.income { color: #c8e6c9; }
-.value.expense { color: #ffcdd2; }
-.value.achievement { color: #a5d6a7; }
+.value.income { color: #198754; }
+.value.expense { color: #dc3545; }
+.value.achievement { color: #1abc9c; }
 </style>
