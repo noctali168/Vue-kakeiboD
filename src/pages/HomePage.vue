@@ -57,6 +57,7 @@ import Kuji from '../components/Kuji.vue'
 import Reminder from '../components/Reminder.vue'
 import Calender from '../components/Calender.vue'
 
+
 const records = ref([]);
 const categories = ref({
   支出: [
