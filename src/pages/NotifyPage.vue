@@ -3,7 +3,7 @@
     <BackHome />
 
     <div class="notify-page-container component-container">
-      <h2>通知・設定</h2>
+      <h2>設定</h2>
 
       <section class="accordion">
         <header @click="toggleSection('name')" class="accordion-header">
@@ -34,16 +34,6 @@
           <ReminderSetting />
         </div>
       </section>
-
-      <section class="accordion">
-        <header @click="toggleSection('fixedCost')" class="accordion-header">
-          固定費設定
-          <span>{{ isOpen.fixedCost ? '▲' : '▼' }}</span>
-        </header>
-        <div v-show="isOpen.fixedCost" class="accordion-content">
-          <FixedCost />
-        </div>
-      </section>
     </div>
   </div>
 </template>
@@ -52,7 +42,6 @@
 import ReminderSetting from '../components/ReminderSetting.vue'
 import NameSetting from '../components/NameSetting.vue'
 import Reset from '../components/Reset.vue'
-import FixedCost from '../components/FixedCost.vue'
 import BackHome from '../components/BackHome.vue'
 import { ref, onMounted } from 'vue'
 
