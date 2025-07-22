@@ -36,12 +36,12 @@ const loadData = () => {
 
 // 6段階評価（コメントと画像パス）
 const ratingLevels = [
-  { comment: '絶好調！目標達成おめでとうございます！', image: '/seityou.png' },
-  { comment: '順調です！この調子でいきましょう！', image: '/wakadori.png' },
-  { comment: 'まずまず。目標まであと少し！', image: '/hinaedori.png' },
-  { comment: 'ちょっと厳しいかも？支出を見直そう！', image: '/hina.png' },
-  { comment: 'ピンチ！目標達成は難しそうです…', image: '/tamago.png' },
-  { comment: 'すぐに対策を考えましょう！', image: '/yakitori.png' }
+  { comment: 'んっっっっっっぴぃぃぃぃ！！目標達成っピ！！', image: '/seityou.png' },
+  { comment: 'ゴールは目前ピ！気を抜くなっピ', image: '/wakadori.png' },
+  { comment: 'まあまあ良い感じっピ！気を抜くなっピ', image: '/hinaedori.png' },
+  { comment: 'エアコンつけすぎっピ！ぜいたくは敵ピ', image: '/hina.png' },
+  { comment: 'もっと稼いで節約してくれっピ', image: '/tamago.png' },
+  { comment: '消費者金融に焼き鳥に焼き鳥にされちゃったピ！', image: '/yakitori.png' }
 ];
 
 // --- ★変更点3: 達成率の計算ロジックをコンポーネント内に移動 ---

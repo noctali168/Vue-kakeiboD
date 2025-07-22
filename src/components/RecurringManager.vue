@@ -4,27 +4,31 @@
     <p>ここで登録した項目は、下のリストから手動で記録できます。</p>
     
     <div class="recurring-manager-grid">
-      <form @submit.prevent="handleSubmit" class="recurring-form-grid"> <label>頻度：
-          <select v-model="form.frequency">
-            <option value="monthly">月ごと</option>
-            <option value="yearly">年ごと</option>
-          </select>
-        </label>
-        <label>区分：
-          <select v-model="form.type" required>
-            <option value="支出">支出</option>
-            <option value="収入">収入</option>
-          </select>
-        </label>
-        <label>名前：<input v-model="form.name" required placeholder="例: 家賃" /></label>
-        <label>金額：<input type="number" v-model.number="form.amount" required /></label>
-        <div class="form-actions">
-          <button type="submit" class="add-button">{{ form.id ? '更新' : '追加' }}</button>
-          <button v-if="form.id" @click="cancelEdit" type="button" class="cancel-button">ｷｬﾝｾﾙ</button>
-        </div>
-      </form>
+      <div class="input-form-card component-container">
+        <form @submit.prevent="handleSubmit" class="recurring-form-layout">
+          <label class="form-label-item">頻度：
+            <select v-model="form.frequency">
+              <option value="monthly">月ごと</option>
+              <option value="yearly">年ごと</option>
+            </select>
+          </label>
+          <label class="form-label-item">区分：
+            <select v-model="form.type" required>
+              <option value="支出">支出</option>
+              <option value="収入">収入</option>
+            </select>
+          </label>
+          <label class="form-label-item">名前：<input v-model="form.name" required placeholder="例: 家賃" /></label>
+          <label class="form-label-item">金額：<input type="number" v-model.number="form.amount" required /></label>
+          <div class="form-actions">
+            <button type="submit" class="add-button">{{ form.id ? '更新' : '追加' }}</button>
+            <button v-if="form.id" @click="cancelEdit" type="button" class="cancel-button">ｷｬﾝｾﾙ</button>
+          </div>
+        </form>
+      </div>
 
-      <div class="list-container recurring-list-area"> <h4>登録済みリスト</h4>
+      <div class="list-container recurring-list-area component-container">
+        <h4>登録済みリスト</h4>
         <ul class="record-list" v-if="recurringItems.length > 0">
           <li class="record-item" v-for="item in recurringItems" :key="item.id">
             <div class="color-bar" :style="{ backgroundColor: item.type === '収入' ? '#9966FF' : '#4BC0C0' }"></div>
@@ -52,7 +56,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted } from 'vue' // onMounted 追加
+import { reactive, ref, onMounted } from 'vue'
 const props = defineProps({
   recurringItems: { type: Array, required: true },
   records: { type: Array, required: true }
@@ -90,39 +94,55 @@ const deleteItem = (id) => {
 /* RecurringManager全体のGridコンテナ */
 .recurring-manager-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr; /* 2つのカラムを均等に分ける */
-  gap: 2rem; /* フォームとリストの間の余白 */
-  margin-top: 1.5rem; /* 上部の余白 */
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 1.5rem;
 }
 
-/* フォームの内部Gridレイアウト */
-.recurring-form-grid { /* クラス名変更 */
+/* 各フォーム/リストを囲むカード状のコンテナ */
+.input-form-card,
+.list-container.recurring-list-area {
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  box-sizing: border-box;
+}
+
+/* フォームの内部レイアウト調整 */
+.recurring-form-layout {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* 各入力フィールドの最小幅を調整 */
+  grid-template-columns: 1fr 1fr; /* 2列にして、各行に2つのフィールドを配置 */
   gap: 1rem;
-  margin-bottom: 0; /* 親グリッドの子なので下マージンは不要 */
+  margin-bottom: 0;
 }
 
-.recurring-form-grid label {
+/* 各フォームラベルと入力フィールドのコンテナ */
+.form-label-item {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.25rem;
   font-weight: bold;
   font-size: 0.9em;
+  color: #2c3e50; /* ラベルの色を濃くして見やすく */
 }
 
-.recurring-form-grid input,
-.recurring-form-grid select {
-  padding: 0.8rem;
+/* ★ここを修正します★ input, select のスタイル */
+.recurring-form-layout input,
+.recurring-form-layout select {
+  padding: 0.6rem; /* 縦パディングを調整 */
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 1rem;
   width: 100%;
   box-sizing: border-box;
+  background-color: #f8f8f8; /* 背景色を統一 */
+  color: #2c3e50; /* 文字色を統一 */
 }
 
 .form-actions {
-  grid-column: 1 / -1; /* グリッドの全幅を占める */
+  grid-column: 1 / -1;
   display: flex;
   gap: 1rem;
   justify-content: flex-end;
@@ -132,13 +152,28 @@ const deleteItem = (id) => {
 .cancel-button { background-color: #6c757d; }
 
 /* リストコンテナの調整 */
-.list-container {
-  margin-top: 0; /* 親グリッドの子なので上マージンは不要 */
-  border-top: none; /* 親グリッドの子なので上ボーダーも不要 */
-  padding-top: 0; /* 親グリッドの子なので上パディングも不要 */
-  max-height: 400px; /* 例えば、最大高さを設定 */
-  overflow-y: auto; /* 高さを超えたらスクロール */
+.list-container.recurring-list-area {
+  margin-top: 0;
+  border-top: none;
+  padding-top: 0;
+  max-height: 400px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #ccc transparent;
 }
+
+.list-container.recurring-list-area::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.list-container.recurring-list-area::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 4px;
+}
+.list-container.recurring-list-area::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
 
 /* レコードリストの基本スタイルは維持 */
 .record-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 1rem; }
@@ -157,11 +192,19 @@ const deleteItem = (id) => {
 
 /* 画面幅が小さい場合のレスポンシブ対応 */
 @media (max-width: 768px) {
-  .recurring-manager-grid { /* クラス名変更 */
-    grid-template-columns: 1fr; /* 1カラムにする（縦並び） */
+  .recurring-manager-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
   }
-  .list-container {
-    max-height: none; /* スクロール制限を解除 */
+  .recurring-form-layout {
+    grid-template-columns: 1fr;
+  }
+  .input-form-card,
+  .list-container.recurring-list-area {
+    padding: 1rem;
+  }
+  .list-container.recurring-list-area {
+    max-height: none;
   }
 }
 </style>

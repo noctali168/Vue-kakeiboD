@@ -3,29 +3,28 @@
     <h3>日々の記録</h3>
     
     <div class="transaction-manager-grid">
-      <form @submit.prevent="handleSubmit" class="transaction-form-grid">
-        <label>区分：
-          <select v-model="form.type" required @change="form.category = ''">
-            <option value="支出">支出</option>
-            <option value="収入">収入</option>
-          </select>
-        </label>
-        <label>カテゴリ：
-          <select v-model="form.category" required>
-            <option disabled value="">選択してください</option>
-            <option v-for="cat in categories[form.type]" :key="cat.name" :value="cat.name">{{ cat.name }}</option>
-          </select>
-        </label>
-        <label>名前：<input v-model="form.name" required /></label>
-        <label>金額：<input type="number" v-model.number="form.amount" required /></label>
-        <div class="form-actions">
-          <button type="submit" class="add-button">{{ form.id ? '更新' : '追加' }}</button>
-          <button v-if="form.id" @click="cancelEdit" type="button" class="cancel-button">ｷｬﾝｾﾙ</button>
-        </div>
-      </form>
+      <div class="input-form-card component-container"> <form @submit.prevent="handleSubmit" class="transaction-form-layout"> <label class="form-label-item">区分：
+            <select v-model="form.type" required @change="form.category = ''">
+              <option value="支出">支出</option>
+              <option value="収入">収入</option>
+            </select>
+          </label>
+          <label class="form-label-item">カテゴリ：
+            <select v-model="form.category" required>
+              <option disabled value="">選択してください</option>
+              <option v-for="cat in categories[form.type]" :key="cat.name" :value="cat.name">{{ cat.name }}</option>
+            </select>
+          </label>
+          <label class="form-label-item">品目：<input v-model="form.name" required /></label>
+          <label class="form-label-item">金額：<input type="number" v-model.number="form.amount" required /></label>
+          <div class="form-actions">
+            <button type="submit" class="add-button">{{ form.id ? '更新' : '追加' }}</button>
+            <button v-if="form.id" @click="cancelEdit" type="button" class="cancel-button">ｷｬﾝｾﾙ</button>
+          </div>
+        </form>
+      </div>
 
-      <div class="list-container transaction-list-area">
-        <h4>全記録リスト</h4>
+      <div class="list-container transaction-list-area component-container"> <h4>全記録リスト</h4>
         <ul v-if="records.length > 0" class="record-list">
           <li class="record-item" v-for="record in records" :key="record.id">
             <div class="color-bar" :style="{ backgroundColor: getCategoryColor(record.category, record.type) }"></div>
@@ -72,36 +71,54 @@ const getCategoryColor = (categoryName, type) => {
 /* TransactionManager全体のGridコンテナ */
 .transaction-manager-grid {
   display: grid;
-  grid-template-columns: 1.2fr 1.8fr; /* フォームを少し狭く、リストを広くする */
-  gap: 1.5rem; /* フォームとリストの間の余白を調整 */
+  grid-template-columns: 1fr 1fr; /* フォームとリストを均等に2列に分ける */
+  gap: 2rem; /* フォームとリストの間の余白を調整 */
   margin-top: 1.5rem;
 }
 
-/* フォームの内部Gridレイアウト */
-.transaction-form-grid {
-  display: grid;
-  /* 2列に固定し、各列の幅を調整 */
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-bottom: 0;
+/* 各フォーム/リストを囲むカード状のコンテナ */
+.input-form-card,
+.list-container.transaction-list-area {
+  /* component-containerから持ってくるスタイルを定義し、
+     TransactionManagerの親のcomponent-containerと重複しないように調整 */
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1.5rem; /* 内部パディング */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  box-sizing: border-box; /* パディングとボーダーを幅に含める */
 }
 
-.transaction-form-grid label {
+
+/* フォームの内部レイアウト調整 */
+.transaction-form-layout { /* クラス名を変更 */
+  display: grid;
+  /* 2列にして、各行に2つのフィールドを配置 */
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem; /* フィールド間の余白 */
+  margin-bottom: 0; /* 下マージンは不要 */
+}
+
+/* 各フォームラベルと入力フィールドのコンテナ */
+.form-label-item {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.25rem;
   font-weight: bold;
   font-size: 0.9em;
+  color: #2c3e50;
 }
 
-.transaction-form-grid input,
-.transaction-form-grid select {
-  padding: 0.8rem;
+.transaction-form-layout input, /* input, select のセレクタも変更 */
+.transaction-form-layout select {
+  padding: 0.6rem;
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 1rem;
   width: 100%;
   box-sizing: border-box;
+  background-color: #f8f8f8;
+  color: #2c3e50;
 }
 
 .form-actions {
@@ -115,27 +132,25 @@ const getCategoryColor = (categoryName, type) => {
 .cancel-button { background-color: #6c757d; }
 
 /* リストコンテナの調整 */
-.list-container {
+.list-container.transaction-list-area {
   margin-top: 0;
   border-top: none;
   padding-top: 0;
-  max-height: 400px;
-  overflow-y: auto;
-  /* スクロールバーが常に表示されないように */
-  scrollbar-width: thin; /* Firefox */
-  scrollbar-color: #ccc transparent; /* Firefox */
+  max-height: 400px; /* リストの最大高さを設定 */
+  overflow-y: auto; /* 高さを超えたらスクロール */
+  scrollbar-width: thin;
+  scrollbar-color: #ccc transparent;
 }
 
-/* Webkit系ブラウザのスクロールバーを隠す（コンテンツが溢れない限り表示しない） */
-.list-container::-webkit-scrollbar {
+.list-container.transaction-list-area::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
-.list-container::-webkit-scrollbar-thumb {
+.list-container.transaction-list-area::-webkit-scrollbar-thumb {
   background-color: #ccc;
   border-radius: 4px;
 }
-.list-container::-webkit-scrollbar-track {
+.list-container.transaction-list-area::-webkit-scrollbar-track {
   background-color: transparent;
 }
 
@@ -158,12 +173,17 @@ const getCategoryColor = (categoryName, type) => {
 @media (max-width: 768px) {
   .transaction-manager-grid {
     grid-template-columns: 1fr; /* 1カラムにする（縦並び） */
-    gap: 1.5rem; /* フォームとリストの間の余白 */
+    gap: 1.5rem;
   }
-  .transaction-form-grid {
+  .transaction-form-layout {
     grid-template-columns: 1fr; /* スマホでは縦1列にする */
   }
-  .list-container {
+  /* カード状のコンテナのパディングをモバイルで調整することも検討 */
+  .input-form-card,
+  .list-container.transaction-list-area {
+    padding: 1rem; /* モバイルでのパディングを少し減らす */
+  }
+  .list-container.transaction-list-area {
     max-height: none; /* スクロール制限を解除 */
   }
 }

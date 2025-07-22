@@ -82,7 +82,7 @@ h3 { margin-top: 0; text-align: center; font-weight: 600; margin-bottom: 1.5rem;
   width: 120px; padding: 0.5rem; border: 1px solid #ddd;
   border-radius: 8px; text-align: right; font-size: 1.1em; font-weight: bold;
   color: #2c3e50;
-  background-color: #ffffff; /* ★ここを追加します★ 入力欄の背景を白に設定 */
+  background-color: #ffffff;
 }
 .progress-bar-container { width: 100%; height: 20px; background-color: #e0e0e0;
   border-radius: 10px; overflow: hidden; margin-bottom: 1rem; }
@@ -94,7 +94,8 @@ h3 { margin-top: 0; text-align: center; font-weight: 600; margin-bottom: 1.5rem;
 .summary-item.text-right { text-align: right; }
 .label { font-size: 0.9em; opacity: 0.8; }
 .value { font-size: 1.4em; font-weight: bold; }
-.value.income { color: #198754; }
-.value.expense { color: #dc3545; }
+/* ★ここを修正します★ */
+.value.income { color: #1abc9c; /* 収支（収入）の色を達成率と同じにする */ }
+.value.expense { color: #dc3545; /* 収支（支出）の色は変更なし */ }
 .value.achievement { color: #1abc9c; }
 </style>
