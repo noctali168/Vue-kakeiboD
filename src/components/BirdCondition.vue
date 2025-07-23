@@ -1,8 +1,6 @@
 <template>
   <section class="component-container monthly-rating">
-    <h3>今月の鳥の様子</h3>
-
-    <div v-if="ratingData">
+    <h3></h3> <div v-if="ratingData">
       <img
         v-if="ratingData.image"
         :src="ratingData.image"
@@ -18,11 +16,16 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 
-// --- ★変更点1: propsを削除し、コンポーネント内にデータを持つ ---
-const records = ref([]);
-const goalAmount = ref(50000); // デフォルト値
+const props = defineProps({
+  username: {
+    type: String,
+    default: '',
+  },
+});
 
-// --- ★変更点2: データを読み込む関数を作成 ---
+const records = ref([]);
+const goalAmount = ref(50000);
+
 const loadData = () => {
   const recData = localStorage.getItem('kakeibo-records');
   if (recData) {
@@ -34,7 +37,6 @@ const loadData = () => {
   }
 };
 
-// 6段階評価（コメントと画像パス）
 const ratingLevels = [
   { comment: 'んっっっっっっぴぃぃぃぃ！！目標達成っピ！！', image: '/seityou.png' },
   { comment: 'ゴールは目前ピ！気を抜くなっピ', image: '/wakadori.png' },
@@ -44,7 +46,6 @@ const ratingLevels = [
   { comment: '消費者金融に焼き鳥に焼き鳥にされちゃったピ！', image: '/yakitori.png' }
 ];
 
-// --- ★変更点3: 達成率の計算ロジックをコンポーネント内に移動 ---
 const getJSTDate = () => new Date(Date.now() + ((new Date().getTimezoneOffset() + (9 * 60)) * 60 * 1000));
 
 const monthlyIncome = computed(() => {
@@ -68,7 +69,6 @@ const achievementRate = computed(() => {
   return (balance.value / goalAmount.value) * 100;
 });
 
-// 達成率に応じて評価を決定する
 const ratingData = computed(() => {
   const rate = achievementRate.value;
   if (rate < 0) return ratingLevels[5];
@@ -79,15 +79,10 @@ const ratingData = computed(() => {
   return ratingLevels[4];
 });
 
-
-// --- ★変更点4: データの変更を検知してリアルタイムに更新 ---
-// コンポーネントが表示された時に、localStorageからデータを読み込む
 onMounted(() => {
   loadData();
-  // 他のタブやウィンドウでlocalStorageが変更されたことを検知するイベント
   window.addEventListener('storage', loadData);
 });
-// コンポーネントが非表示になったら、イベント検知を解除する
 onUnmounted(() => {
   window.removeEventListener('storage', loadData);
 });
@@ -97,17 +92,26 @@ onUnmounted(() => {
 .monthly-rating {
   text-align: center;
 }
-/* ★変更点5: 画像のサイズを固定 */
+.monthly-rating h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.4rem;
+  color: #2c3e50;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
 .rating-image {
   width: 120px;
   height: 120px;
   margin-bottom: 0.5rem;
-  object-fit: contain; /* アスペクト比を保ちつつ、コンテナに収める */
+  object-fit: contain;
 }
 .rating-comment {
   font-size: 1.2rem;
   font-weight: bold;
   color: #333;
-  min-height: 2.4rem; /* コメントの高さが変動してもレイアウトが崩れないように */
+  min-height: 2.4rem;
 }
 </style>

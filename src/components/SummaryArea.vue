@@ -1,33 +1,37 @@
 <template>
   <div class="component-container">
     <div class="header">
-      <h3>{{ currentMonthYear }}の収支グラフ</h3>
+      <h3>{{ displayChartType === 'pie' ? currentMonthYear + 'の収支内訳' : '直近6ヶ月の収支推移' }}</h3>
 
-      <div class="chart-controls">
-        <div class="toggle-buttons">
-          <button @click="chartMode = '支出'" :class="{ active: chartMode === '支出' && displayChartType === 'pie' }">支出 (円グラフ)</button>
-          <button @click="chartMode = '収入'" :class="{ active: chartMode === '収入' && displayChartType === 'pie' }">収入 (円グラフ)</button>
+      <div class="toggle-buttons chart-type-selector">
+        <button @click="displayChartType = 'pie'" :class="{ active: displayChartType === 'pie' }">円グラフ表示</button>
+        <button @click="displayChartType = 'bar'" :class="{ active: displayChartType === 'bar' }">棒グラフ表示</button>
+      </div>
+    </div>
+
+    <div v-if="displayChartType === 'pie'" class="charts-container">
+      <div class="chart-section">
+        <h4>支出の内訳</h4>
+        <div class="chart-wrapper">
+          <Pie v-if="expenseChartData.labels.length > 0" :data="expenseChartData" :options="baseChartOptions" />
+          <p v-else>今月の支出データがありません。</p>
         </div>
+      </div>
 
-        <div class="toggle-buttons" style="margin-top: 1rem;">
-          <button @click="displayChartType = 'pie'" :class="{ active: displayChartType === 'pie' }">円グラフ表示</button>
-          <button @click="displayChartType = 'bar'" :class="{ active: displayChartType === 'bar' }">棒グラフ表示</button>
+      <div class="chart-section">
+        <h4>収入の内訳</h4>
+        <div class="chart-wrapper">
+          <Pie v-if="incomeChartData.labels.length > 0" :data="incomeChartData" :options="baseChartOptions" />
+          <p v-else>今月の収入データがありません。</p>
         </div>
       </div>
     </div>
 
-    <div class="chart-wrapper">
-      <Pie
-        v-if="displayChartType === 'pie' && pieChartData.labels.length > 0"
-        :data="pieChartData"
-        :options="baseChartOptions"
-      />
-      <Bar
-        v-else-if="displayChartType === 'bar' && barChartData.labels.length > 0"
-        :data="barChartData"
-        :options="barChartOptions"
-      />
-      <p v-else>データがありません。</p>
+    <div v-else-if="displayChartType === 'bar'" class="bar-chart-container">
+      <div class="chart-wrapper large-chart-wrapper">
+        <Bar v-if="barChartData.labels.length > 0" :data="barChartData" :options="barChartOptions" />
+        <p v-else>データがありません。</p>
+      </div>
     </div>
   </div>
 </template>
@@ -41,9 +45,9 @@ import {
   Tooltip,
   Legend,
   ArcElement,
-  CategoryScale, // Bar Chart用に追加
-  LinearScale,   // Bar Chart用に追加
-  BarElement     // Bar Chart用に追加
+  CategoryScale,
+  LinearScale,
+  BarElement
 } from 'chart.js';
 
 ChartJS.register(
@@ -60,12 +64,11 @@ const props = defineProps({
   expenseData: { type: Object, required: true },
   incomeData: { type: Object, required: true },
   categories: { type: Object, required: true },
-  records: { type: Array, required: true }, // 追加：全取引履歴
+  records: { type: Array, required: true },
 });
 
-const chartMode = ref('支出'); // 支出 or 収入 の円グラフ切替用
-// ★ここを変更します★
-const displayChartType = ref('bar'); // 'pie' or 'bar'
+// 円グラフと棒グラフの表示タイプを管理
+const displayChartType = ref('bar'); // 初期表示は棒グラフのまま
 
 const currentMonthYear = computed(() => {
   const now = new Date();
@@ -74,25 +77,56 @@ const currentMonthYear = computed(() => {
   return `${year}年${month}月`;
 });
 
-// --------- 円グラフ用 computed ---------
-const pieChartData = computed(() => {
-  const isExpense = chartMode.value === '支出';
-  const dataObject = isExpense ? props.expenseData : props.incomeData;
-  const categoryList = isExpense ? props.categories.支出 : props.categories.収入;
-
-  const labels = Object.keys(dataObject);
-  const data = Object.values(dataObject);
-
+// --------- 円グラフデータ (支出) ---------
+const expenseChartData = computed(() => {
+  const labels = Object.keys(props.expenseData);
+  const data = Object.values(props.expenseData);
+  
   const backgroundColors = labels.map(label => {
-    const category = categoryList.find(c => c.name === label);
+    const category = props.categories.支出.find(c => c.name === label);
     return category ? category.color : '#cccccc';
   });
 
   return {
-    labels,
-    datasets: [{ backgroundColor: backgroundColors, data }]
+    labels: labels,
+    datasets: [{ backgroundColor: backgroundColors, data: data }]
   };
 });
+
+// --------- 円グラフデータ (収入) ---------
+const incomeChartData = computed(() => {
+  const labels = Object.keys(props.incomeData);
+  const data = Object.values(props.incomeData);
+  
+  const backgroundColors = labels.map(label => {
+    const category = props.categories.収入.find(c => c.name === label);
+    return category ? category.color : '#cccccc';
+  });
+
+  return {
+    labels: labels,
+    datasets: [{ backgroundColor: backgroundColors, data: data }]
+  };
+});
+
+// 円グラフの共通オプション
+const baseChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: 'top',
+      labels: {
+        color: '#2c3e50',
+        font: {
+          size: 12
+        }
+      }
+    },
+    tooltip: {},
+    title: { display: false }
+  }
+};
 
 // --------- 棒グラフ用ロジック ---------
 function getPastMonths(count = 6) {
@@ -106,9 +140,6 @@ function getPastMonths(count = 6) {
   }
   return result;
 }
-
-// src/components/SummaryArea.vue
-// ... (中略) ...
 
 const barChartData = computed(() => {
   const months = getPastMonths(6);
@@ -133,40 +164,18 @@ const barChartData = computed(() => {
     datasets: [
       {
         label: '支出',
-        backgroundColor: '#FF8A80', // ★より鮮やかな赤に変更★
+        backgroundColor: '#FF8A80',
         data: spendData,
       },
       {
         label: '収入',
-        backgroundColor: '#80CBC4', // ★より鮮やかな緑に変更★
+        backgroundColor: '#80CBC4',
         data: incomeData,
       },
     ],
   };
 });
 
-// ... (後略) ...
-
-// 円グラフのオプション
-const baseChartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      position: 'top',
-      labels: {
-        color: '#2c3e50',
-        font: {
-          size: 12
-        }
-      }
-    },
-    tooltip: {}, // ツールチップのカスタマイズを削除し、デフォルトに戻す
-    title: { display: false }
-  }
-};
-
-// 棒グラフのオプション
 const barChartOptions = {
   responsive: true,
   maintainAspectRatio: false,
@@ -197,37 +206,25 @@ const barChartOptions = {
 .header {
   text-align: center;
   margin-bottom: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center; /* 中央寄せ */
 }
 h3 {
   margin: 0;
   font-size: 1.8rem;
   color: #2c3e50;
-  margin-bottom: 1rem; /* グラフコントロールとの間隔 */
-  /* ★追加★ グラフタイトルを強調 */
+  margin-bottom: 1rem;
   font-weight: 700;
   letter-spacing: 0.5px;
   text-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
-/* グラフコントロール（ボタン群） */
-.chart-controls {
-  display: flex;
-  flex-direction: column; /* 縦に並べる */
-  gap: 1rem; /* ボタン群の間のスペース */
-  margin-bottom: 1.5rem; /* グラフとの間隔 */
-  width: 100%; /* 親要素に合わせる */
-  align-items: center; /* 中央寄せ */
-}
-
+/* グラフタイプ選択ボタン */
 .toggle-buttons {
   display: flex;
   border: 1px solid #0d6efd;
   border-radius: 8px;
   overflow: hidden;
-  width: fit-content; /* コンテンツに合わせて幅を調整 */
+  width: fit-content;
+  margin: 0 auto 1.5rem; /* 中央寄せと下マージン */
 }
 .toggle-buttons button {
   padding: 0.5rem 1rem;
@@ -237,7 +234,7 @@ h3 {
   cursor: pointer;
   font-weight: bold;
   transition: all 0.2s;
-  flex-grow: 1; /* ボタンが均等に幅を占めるように */
+  flex-grow: 1;
 }
 .toggle-buttons button.active {
   background-color: #0d6efd;
@@ -247,20 +244,62 @@ h3 {
   background-color: #e7f1ff;
 }
 
+/* 円グラフのコンテナ */
+.charts-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2rem; /* グラフ間のスペース */
+}
+
+.chart-section {
+  text-align: center;
+  flex: 1;
+  min-width: 280px;
+  max-width: 400px;
+}
+
+.chart-section h4 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+/* 各グラフのラッパー */
 .chart-wrapper {
   position: relative;
   width: 100%;
-  height: 300px; /* 以前のChart-sectionと同じ高さに設定 */
+  height: 250px; /* 円グラフの高さ */
   margin: auto;
-  /* ★追加★ グラフ自体に少し影をつけ、立体感を出す */
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  border-radius: 8px; /* 角丸にする */
-  overflow: hidden; /* グラフがはみ出さないように */
+  border-radius: 8px;
+  overflow: hidden;
 }
+
+/* 棒グラフ専用のコンテナ */
+.bar-chart-container {
+  width: 100%;
+  padding-top: 1rem; /* グラフの上部にスペース */
+}
+
+.large-chart-wrapper {
+  height: 350px; /* 棒グラフの高さ */
+}
+
 p {
   text-align: center;
-  margin-top: 1rem; /* 元々は2remでしたが、chart-wrapperに影をつけたので少し詰める */
+  margin-top: 1rem;
   color: #888;
   font-size: 0.9em;
+}
+</style>
+
+<style lang="css">
+/* vue-chartjs の Canvas 要素に直接スタイルを適用 */
+.chart-wrapper canvas {
+  width: 100% !important;
+  height: 100% !important;
 }
 </style>
