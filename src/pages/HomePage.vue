@@ -75,7 +75,6 @@ const showRewardOverlay = ref(false);
 
 const getJSTDate = () => new Date(Date.now() + ((new Date().getTimezoneOffset() + (9 * 60)) * 60 * 1000));
 
-// --- 固定費の自動登録ロジック ---
 const runAutoAddRecurringItems = () => {
   const recurringItemsData = localStorage.getItem('kakeibo-recurring');
   if (!recurringItemsData) return;
@@ -88,7 +87,7 @@ const runAutoAddRecurringItems = () => {
   const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const lastRunMonth = localStorage.getItem('kakeibo-last-auto-add-month');
 
-  if (lastRunMonth === currentMonthStr) return; // 今月は実行済み
+  if (lastRunMonth === currentMonthStr) return;
 
   const currentRecords = JSON.parse(localStorage.getItem('kakeibo-records') || '[]');
   const newRecords = [];
@@ -112,7 +111,7 @@ const runAutoAddRecurringItems = () => {
   if (newRecords.length > 0) {
     const updatedRecords = [...newRecords, ...currentRecords].sort((a, b) => new Date(b.date) - new Date(a.date));
     localStorage.setItem('kakeibo-records', JSON.stringify(updatedRecords));
-    records.value = updatedRecords; // 画面に反映
+    records.value = updatedRecords;
   }
 
   localStorage.setItem('kakeibo-last-auto-add-month', currentMonthStr);
@@ -120,10 +119,8 @@ const runAutoAddRecurringItems = () => {
 
 
 onMounted(() => {
-  // まず自動登録を実行
   runAutoAddRecurringItems();
 
-  // その後、データを読み込む
   const recData = localStorage.getItem('kakeibo-records');
   if (recData) records.value = JSON.parse(recData).sort((a, b) => new Date(b.date) - new Date(a.date));
 
@@ -131,7 +128,6 @@ onMounted(() => {
   if (catData) {
     categories.value = JSON.parse(catData);
   } else {
-    // デフォルトカテゴリを設定
     categories.value = {
       支出: [
         { name: '食費', color: '#FF6384' }, { name: '交通費', color: '#36A2EB' },
@@ -140,7 +136,6 @@ onMounted(() => {
       収入: [ { name: '給与', color: '#9966FF' }, { name: '副業', color: '#FF9F40' } ]
     };
   }
-  // 固定費カテゴリがなければ追加
   if (!categories.value.支出.some(c => c.name === '固定費')) {
     categories.value.支出.push({ name: '固定費', color: '#4BC0C0' });
   }
@@ -173,6 +168,9 @@ const updateGoalAmount = (newGoal) => {
 const displayReward = () => {
   if (currentAchievementRate.value >= 100) {
     showRewardOverlay.value = true;
+    // ★★★ ご褒美獲得を記録 ★★★
+    localStorage.setItem('kakeibo-reward-claimed', 'true');
+    // ★★★★★★★★★★★★★★★★★★
     setTimeout(() => {
       showRewardOverlay.value = false;
     }, 3000);
@@ -181,17 +179,14 @@ const displayReward = () => {
 </script>
 
 <style scoped>
-/* スタイルは変更なし */
-/* ...（既存のスタイルをそのままコピー）... */
 .container {
   max-width: 1400px;
   margin: 0 auto;
   padding: calc(72px + 2rem) 2rem 2rem;
   min-height: calc(100vh - 72px);
   box-sizing: border-box;
-  position: relative; /* オーバーレイの基準点として設定 */
+  position: relative;
 }
-
 .main-content-row {
   display: flex;
   flex-wrap: wrap;
@@ -200,143 +195,110 @@ const displayReward = () => {
   margin-bottom: 2rem;
   justify-content: center;
 }
-
 .content-left {
   flex: 1;
   min-width: 300px;
   margin-top: 0;
 }
-
 .card-container {
-  background-color: #fff; /* 親の白い枠 */
+  background-color: #fff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  padding: 0; /* 子のcard-innerがパディングを持つ */
+  padding: 0;
   box-shadow: 0 2px 5px rgba(0,0,0,0.05);
   box-sizing: border-box;
   display: flex;
-  flex-direction: column; /* 子要素を縦に並べる */
-  overflow: hidden; /* 角丸を効かせる */
+  flex-direction: column;
+  overflow: hidden;
 }
-
-/* 各セクションを囲む白い枠の共通スタイル */
 .card-inner {
   background-color: #fff;
-  border-bottom: 1px solid #e0e0e0; /* 基本は下線あり */
-  padding: 1.5rem; /* 内部パディング */
+  border-bottom: 1px solid #e0e0e0;
+  padding: 1.5rem;
   box-sizing: border-box;
 }
-.card-inner:last-of-type { /* 最後の子要素の下線はなし */
+.card-inner:last-of-type {
   border-bottom: none;
 }
-
-/* インコの写真とコメントのブロック */
 .character-block {
-  /* .card-innerの共通スタイルを継承しつつ、必要に応じて調整 */
 }
-
-/* くじ引きのブロックのスタイル */
 .kuji-block {
-  border-top: 1px solid #e0e0e0; /* 上の要素との間に線を追加 */
+  border-top: 1px solid #e0e0e0;
   flex-grow: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
 }
-
-/* GoalTrackerをカードとして大きく表示するためのスタイル */
 .goal-tracker-full-block {
-  border-top: 1px solid #e0e0e0; /* 上の要素との間に線を追加 */
-  flex-grow: 1; /* 残りのスペースを埋める */
+  border-top: 1px solid #e0e0e0;
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 1.5rem; /* GoalTrackerコンポーネントが直接持つpaddingと重複しないように調整 */
+  padding: 1.5rem;
 }
-
-/* ご褒美ボタンエリアのスタイル */
 .reward-button-area {
   margin-top: 1.5rem;
   text-align: center;
   width: 100%;
 }
-
 .reward-button {
   padding: 0.8rem 1.5rem;
   font-size: 1.1rem;
-  background-color: #ff9800; /* オレンジ色 */
+  background-color: #ff9800;
   color: white;
   border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.3s;
 }
-
 .reward-button:disabled {
   background-color: #cccccc;
   cursor: not-allowed;
 }
-
 .reward-button:hover:not(:disabled) {
   background-color: #f57c00;
 }
-
 .reward-hint {
   font-size: 0.9em;
   color: #666;
   margin-top: 0.8rem;
 }
-
-
-/* CharacterSectionのマージンとボーダーを調整 */
 :deep(.character-section) {
   text-align: center;
   font-size: 1.5rem;
   margin-top: 0;
   margin-bottom: 0;
-  padding-bottom: 1.5rem; /* インコと目標金額の間のパディング */
-  border-bottom: 1px solid #e0e0e0; /* インコと目標金額の間に線 */
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e0e0e0;
 }
-/* CharacterSection内のpタグのマージンも調整 */
 :deep(.character-section p) {
     margin-top: 0.5rem;
     margin-bottom: 0;
 }
-
 .content-right {
   flex: 1;
   min-width: 300px;
   margin-top: 0;
 }
-
-/* SummaryAreaを囲む新しいカードコンテナのスタイル */
 .summary-chart-container {
-  /* ここでcontent-rightのスタイルを上書きまたは追加調整 */
   display: flex;
   flex-direction: column;
-  padding: 1.5rem; /* SummaryArea内部のpaddingと競合しないように調整 */
+  padding: 1.5rem;
 }
-
-/* SummaryAreaコンポーネント自体のスタイル調整 */
 .summary-area-component {
-  /* 親のsummary-chart-containerがpaddingを持つため、ここでpaddingをリセット */
   padding: 0;
   border: none;
   box-shadow: none;
   margin-bottom: 0;
 }
-
-
-/* :deep()スタイルの一部は.card-inner内で調整するため、ここでは削除または上書き */
 :deep(.season-display),
 :deep(.monthly-rating) {
   text-align: center;
   margin-top: 0;
   margin-bottom: 0;
 }
-
-/* Kujiコンポーネント内部のスタイルを調整 */
 :deep(.kuji-area) {
   margin-top: 0;
   text-align: center;
@@ -374,25 +336,19 @@ const displayReward = () => {
   height: 100px;
   object-fit: contain;
 }
-
-
 @media (max-width: 768px) {
   .main-content-row {
     flex-direction: column;
     align-items: center;
   }
-
   .content-left,
   .content-right {
     width: 100%;
     min-width: unset;
   }
-
-  /* card-inner のモバイルでのパディング調整 */
   .card-inner {
     padding: 1rem;
   }
-  /* CharacterSectionはcard-innerのパディングを使うのでpaddingはリセット */
   :deep(.character-section) {
     padding: 0;
     padding-bottom: 1rem;
@@ -400,32 +356,26 @@ const displayReward = () => {
   .kuji-block {
     padding: 1rem;
   }
-
-  /* summary-chart-container のモバイル調整 */
   .summary-chart-container {
     padding: 1rem;
   }
 }
-
-/* ご褒美オーバーレイのスタイル */
 .reward-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.8); /* 半透明の黒背景 */
-  background-image: url('/saito.png'); /* 指定された画像 */
-  background-size: contain; /* 画像を中央に収まるように表示 */
+  background-color: rgba(0, 0, 0, 0.8);
+  background-image: url('/saito.png');
+  background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-  z-index: 9999; /* 他の要素より手前に表示 */
+  z-index: 9999;
   display: flex;
   justify-content: center;
   align-items: center;
 }
-
-/* トランジション（フェードイン・アウト） */
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.5s;
 }

@@ -34,12 +34,10 @@
 <script setup>
 import { ref } from 'vue';
 
-// --- リアクティブな参照 ---
 const fileInput = ref(null);
 const importStatus = ref(null);
 const isImporting = ref(false);
 
-// ★保守性向上のため、バックアップ対象のキーを配列で一元管理
 const STORAGE_KEYS = [
   'kakeibo-records',
   'kakeibo-categories',
@@ -50,36 +48,28 @@ const STORAGE_KEYS = [
   'kuji-result-label',
   'kuji-result-image',
   'kakeibo-unlocked-achievements',
+  'kakeibo-reward-claimed', // ご褒美アチーブ用のキー
 ];
 
-/**
- * データをJSONファイルとしてエクスポートします。
- */
 const exportData = () => {
   try {
-    // 全ての対象データをlocalStorageから収集
     const allData = STORAGE_KEYS.reduce((data, key) => {
       const item = localStorage.getItem(key);
       try {
-        // JSON形式のデータはパースして格納
         data[key] = item ? JSON.parse(item) : null;
       } catch (e) {
-        // パースできないデータ（文字列など）はそのまま格納
         data[key] = item;
       }
       return data;
     }, {});
 
-    // ファイル名の設定
     const defaultFilename = `kakeibo-backup-${new Date().toISOString().slice(0, 10)}.json`;
     const userFilename = prompt("ファイル名を入力してください:", defaultFilename);
     
-    // ユーザーがキャンセルした場合は処理を中断
     if (userFilename === null) return;
 
     const finalFilename = userFilename.trim() ? userFilename : defaultFilename;
 
-    // ファイルのダウンロード処理
     const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -93,19 +83,12 @@ const exportData = () => {
   }
 };
 
-/**
- * ファイル選択ダイアログを開きます。
- */
 const triggerFileInput = () => {
-  // 処理中でなければファイル選択ダイアログを開く
   if (!isImporting.value) {
     fileInput.value.click();
   }
 };
 
-/**
- * 選択されたファイルを処理し、データをインポートします。
- */
 const handleFileUpload = (event) => {
   const file = event.target.files[0];
   if (!file) return;
@@ -118,9 +101,7 @@ const handleFileUpload = (event) => {
     try {
       const importedData = JSON.parse(e.target.result);
 
-      // ★管理しているキーのみをループでインポート
       for (const key of STORAGE_KEYS) {
-        // インポートファイルにキーが存在する場合のみ更新
         if (importedData[key] !== undefined && importedData[key] !== null) {
           const valueToStore = typeof importedData[key] === 'object' 
             ? JSON.stringify(importedData[key]) 
@@ -134,7 +115,6 @@ const handleFileUpload = (event) => {
         message: 'インポートに成功しました！ページを自動で更新します。' 
       };
       
-      // ★UX改善：メッセージを1.5秒表示した後に自動でページをリロード
       setTimeout(() => {
         window.location.reload();
       }, 1500);
@@ -143,10 +123,7 @@ const handleFileUpload = (event) => {
       console.error("インポート失敗:", error);
       importStatus.value = { type: 'error', message: `インポートに失敗しました: ${error.message}` };
     } finally {
-      // 成功・失敗にかかわらず、ローディング状態を解除（エラー時もボタン操作を可能に）
-      // ただし成功時はリロードするので、主にエラー時に意味がある
       isImporting.value = false;
-      // ファイル選択をリセットして同じファイルを再度選択できるようにする
       fileInput.value.value = '';
     }
   };
@@ -170,7 +147,7 @@ const handleFileUpload = (event) => {
 .io-section {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem; /* 少し間隔を調整 */
+  gap: 0.8rem;
 }
 .io-section h4 {
   margin: 0;
@@ -179,7 +156,7 @@ const handleFileUpload = (event) => {
 .io-section p {
   margin: 0;
   color: #6c757d;
-  font-size: 0.9rem; /* 少しフォントサイズを調整 */
+  font-size: 0.9rem;
 }
 .export-button, .import-button {
   border: none;
@@ -194,7 +171,7 @@ const handleFileUpload = (event) => {
 .export-button { background-color: #0d6efd; }
 .export-button:hover { background-color: #0b5ed7; }
 
-.import-button { background-color: #198754; } /* 色を成功系の緑に変更 */
+.import-button { background-color: #198754; }
 .import-button:hover { background-color: #157347; }
 .import-button:disabled {
   background-color: #6c757d;
@@ -205,7 +182,7 @@ const handleFileUpload = (event) => {
 hr {
   border: none;
   border-top: 1px solid #e0e0e0;
-  margin: 1rem 0; /* 上下のマージンを調整 */
+  margin: 1rem 0;
 }
 .status-message {
   font-weight: bold;
