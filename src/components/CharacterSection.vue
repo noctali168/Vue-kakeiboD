@@ -2,42 +2,74 @@
   <section class="character-section">
     <p v-if="username" class="welcome-message">{{ username }}さん、今日も一日頑張りましょう！</p>
     <p v-else class="welcome-message">今日も一日頑張りましょう！</p>
-    <BirdCondition />
-  </section>
+
+    <BirdCondition :username="username" />
+
+    </section>
 </template>
 
 <script setup>
 import BirdCondition from './BirdCondition.vue'
-// import SeasonDisplay from './SeasonDisplay.vue' // このimportは残しておいても問題ありません
+// SeasonDisplay のインポートを削除
+// import SeasonDisplay from './SeasonDisplay.vue'
 import { ref, onMounted } from 'vue'
 
-// ★追加★ username を props として定義
 const props = defineProps({
   username: {
     type: String,
     default: '',
   },
 });
-
-// CharacterSection 内部で username を直接参照する必要がなくなったため削除
-// const username = ref('')
-// onMounted(() => {
-//   username.value = localStorage.getItem('kakeibo-username') || ''
-// })
 </script>
 
 <style scoped>
 .character-section {
-  text-align: center; /* CharacterSection自体は中央寄せを維持 */
+  text-align: center;
   font-size: 1.5rem;
-  margin-top: 1rem; /* 必要に応じて調整 */
+  position: relative;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
-/* ★追加★ ウェルカムメッセージのスタイル */
 .welcome-message {
-  font-size: 1.1em; /* メッセージのフォントサイズ */
-  font-weight: bold;
+  font-size: 1em;
+  font-weight: 700;
   color: #2c3e50;
-  margin-bottom: 1rem; /* インコとの間隔 */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  letter-spacing: 0.5px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+
+  position: static;
+  transform: none;
+  width: auto;
+  padding: 0;
+  margin-bottom: 0.5rem; /* BirdCondition との間隔を調整 */
 }
+
+/* BirdConditionコンポーネント自体のマージンを調整 */
+:deep(.monthly-rating) {
+  text-align: center;
+  margin-top: 0.5rem; /* welcome-message との間隔 */
+  /* SeasonDisplay がなくなったため、このマージンを調整 */
+  margin-bottom: 0; /* 下の要素がなくなるため、不要なマージンをリセット */
+  padding: 0;
+  border: none;
+  box-shadow: none;
+  background-color: transparent;
+}
+
+/* SeasonDisplay の :deep() スタイルは不要になるため削除 */
+/*
+:deep(.season-display) {
+  margin-top: 0.5rem;
+  font-size: 1.1rem;
+  color: #555;
+}
+:deep(.season-display strong) {
+  color: #1abc9c;
+}
+*/
 </style>

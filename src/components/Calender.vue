@@ -3,13 +3,9 @@
   <div class="calendar">
     <div class="nav">
       <button @click="prevMonth">＜ 前の月</button>
-      <div class="nav-center">
-        <select v-model.number="currentYear">
-          <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}年</option>
-        </select>
-        <select v-model.number="currentMonth">
-          <option v-for="m in 12" :key="m" :value="m">{{ m }}月</option>
-        </select>
+      <div class="month-year-inputs">
+        <input type="number" v-model.number="currentYear" class="year-input" min="2000" max="2100" />年
+        <input type="number" v-model.number="currentMonth" class="month-input" min="1" max="12" />月
       </div>
       <button @click="nextMonth">次の月 ＞</button>
     </div>
@@ -63,9 +59,6 @@ import BackHomeLink from '../components/BackHome.vue';
 const now = new Date();
 const currentYear = ref(now.getFullYear());
 const currentMonth = ref(now.getMonth() + 1);
-const currentYearRaw = new Date().getFullYear();
-const yearOptions = Array.from({ length: 6 }, (_, i) => currentYearRaw - 3 + i); // 例: 3年前〜2年後
-
 
 const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
 const records = ref([]);
@@ -144,159 +137,129 @@ const dayRecords = computed(() => {
 
 <style scoped>
 .calendar {
-  padding: 2rem;
-  max-width: 800px;
-  margin: 0 auto;
-  background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  padding: 2rem; max-width: 800px; margin: 0 auto;
+  background-color: #fff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);
 }
 .nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;
 }
 .nav button {
-  padding: 0.5rem 1rem;
-  background-color: #f5f5f5;
-  border: 1px solid #ddd;
-  color: #333;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: 0.3s;
-}
-.nav button:hover {
-  background-color: #e0e0e0;
-}
-.nav-center {
-  display: flex;
-  gap: 1.0rem;
-  align-items: center;
-}
-.nav select {
-  padding: 0.6rem 0.6rem;
-  border-radius: 7px;
-  border: 1px solid #ccc;
-  background-color: white;
+  padding: 0.5rem 1rem; background-color: #f0f2f5;
+  border: 1px solid #ddd; color: #333;
+  border-radius: 6px; cursor: pointer; transition: 0.3s;
+  /* グラフのナビゲーションボタンと統一 */
+  font-weight: normal;
   font-size: 1rem;
-  cursor: pointer;
-  min-width: 6rem;
 }
-h2 {
-  text-align: center;
-  margin: 0 1rem;
-  font-size: 1.8rem; /* タイトルを少し大きく */
+.nav button:hover { background-color: #e0e0e0; }
+
+/* 年月入力フィールドのスタイル（HomePage.vue のスタイルと統一） */
+.month-year-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  /* Calendarのナビゲーションボタンと統一 */
+  font-size: 1.2rem;
   color: #2c3e50;
+  font-weight: bold;
 }
+.month-year-inputs input {
+  width: 60px; /* 年入力の幅 */
+  text-align: center;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+  color: #2c3e50; /* 文字色を濃く */
+  background-color: #f0f2f5; /* 背景色を明るく */
+}
+.month-year-inputs .month-input {
+  width: 40px; /* 月入力の幅 */
+}
+
+
 .grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 0.5rem; /* セル間の間隔 */
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem;
 }
 .day {
-  border-radius: 8px;
-  text-align: center;
-  padding: 0.5rem 0.2rem;
-  cursor: pointer;
-  position: relative;
-  transition: background-color 0.2s;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-height: 90px; /* セルの高さを少し高く */
-  background-color: #ffffff; /* デフォルトの背景色 */
-  border: 1px solid #e0e0e0; /* 細いボーダー */
-  box-sizing: border-box; /* パディングとボーダーを幅に含める */
+  border-radius: 8px; text-align: center; padding: 0.5rem 0.2rem;
+  cursor: pointer; position: relative; transition: background-color 0.2s;
+  display: flex; flex-direction: column; justify-content: space-between; min-height: 90px;
+  background-color: #fff; border: 1px solid #e0e0e0;
+  box-sizing: border-box;
 }
 .day:hover {
-  background-color: #f0f0f0; /* ホバー時の背景色を少し濃く */
+  background-color: #f0f0f0;
 }
 .day.header {
-  font-weight: bold;
-  background-color: #f9f9f9; /* ヘッダーの背景色 */
+  font-weight: bold; background-color: #f9f9f9; border: none; min-height: auto;
   color: #555;
-  border: none;
-  min-height: auto;
-  padding: 0.8rem 0; /* ヘッダーのパディング調整 */
+  padding: 0.8rem 0;
 }
 .day.empty {
-  border: none;
-  background: transparent;
-  cursor: default;
+  border: none; background: transparent; cursor: default;
 }
 
-/* ★日付番号のスタイルを強化★ */
 .day-number {
-  font-size: 1.2em; /* 日付の数字を大きく */
-  font-weight: bold; /* 太字 */
-  color: #2c3e50; /* 日付の数字の色 */
-  margin-bottom: 0.4rem; /* バーとの間隔 */
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #2c3e50;
+  margin-bottom: 0.4rem;
 }
 
-/* ★今日の日付の強調を改善★ */
 .day.is-today {
-  background-color: #e0f7fa; /* 明るい水色 */
-  border: 2px solid #00bcd4; /* 青いボーダー */
-  transform: scale(1.02); /* 少し拡大して強調 */
+  background-color: #e0f7fa;
+  border: 2px solid #00bcd4;
+  transform: scale(1.02);
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 .day.is-today .day-number {
-  color: #00796b; /* 今日の日付の色を濃くする */
+  color: #00796b;
 }
 .day.is-today:hover {
   background-color: #b2ebf2;
 }
 
-/* ★記録のある日の強調を改善★ */
 .day.has-record {
-  background-color: #f0fbf0; /* 緑がかった薄い背景色 */
-  border: 1px solid #a5d6a7; /* 薄い緑のボーダー */
+  background-color: #f0fbf0;
+  border: 1px solid #a5d6a7;
 }
 .day.has-record:hover {
-  background-color: #e6f6e6; /* ホバー時の背景色 */
+  background-color: #e6f6e6;
 }
 .day.has-record.is-today {
-  background-color: #e0f7fa; /* 今日かつ記録ありの場合は今日のスタイル優先 */
+  background-color: #e0f7fa;
   border: 2px solid #00bcd4;
 }
 
 .bars-container {
   display: flex;
   gap: 2px;
-  height: 6px; /* バーの高さを少し高く */
+  height: 6px;
   margin: 0.3rem auto 0;
   padding: 0 4px;
-  justify-content: center; /* バーを中央寄せ */
-  align-items: flex-end; /* バーを下揃え */
-  flex-wrap: wrap; /* バーが多すぎる場合に折り返す */
+  justify-content: center;
+  align-items: flex-end;
+  flex-wrap: wrap;
 }
 .category-bar {
-  width: 10px; /* バーの幅を固定 */
-  height: 100%; /* 親の高さに合わせる */
+  width: 10px;
+  height: 100%;
   border-radius: 2px;
-  flex-shrink: 0; /* 幅を固定するため縮まないようにする */
+  flex-shrink: 0;
 }
-
 .details-section {
-  margin-top: 2.5rem; /* 上のマージンを大きく */
-  border-top: 1px solid #eee;
-  padding-top: 1.5rem;
+  margin-top: 2.5rem; border-top: 1px solid #eee; padding-top: 1.5rem;
 }
 .details-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+  list-style: none; padding: 0;
 }
 .detail-item {
-  display: flex;
-  align-items: center;
-  padding: 0.8rem 1rem; /* パディングを大きく */
-  margin-bottom: 0.5rem; /* アイテム間のマージン */
+  display: flex; align-items: center; padding: 0.8rem 1rem; margin-bottom: 0.5rem;
   border-radius: 6px;
   background-color: #fefefe;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  font-size: 0.95rem; /* 文字サイズ調整 */
+  font-size: 0.95rem;
 }
 .detail-item:last-child {
   margin-bottom: 0;
@@ -305,11 +268,8 @@ h2 {
   background-color: #f9f9f9;
 }
 .category-dot {
-  width: 14px; /* ドットを大きく */
-  height: 14px;
-  border-radius: 50%;
-  margin-right: 1rem; /* ドットとテキストの間隔を広げる */
-  flex-shrink: 0;
+  width: 14px; height: 14px;
+  border-radius: 50%; margin-right: 1rem; flex-shrink: 0;
 }
 .detail-name {
   flex-grow: 1;
@@ -318,7 +278,7 @@ h2 {
 }
 .detail-amount {
   font-weight: bold;
-  font-size: 1.1em; /* 金額を強調 */
+  font-size: 1.1em;
 }
 .detail-amount.income {
   color: #198754;

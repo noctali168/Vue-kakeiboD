@@ -19,7 +19,8 @@
           </label>
           <label class="form-label-item">品目：<input v-model="form.name" required /></label>
           <label class="form-label-item">金額：<input type="number" v-model.number="form.amount" required /></label>
-          <label class="form-label-item">日付：<input type="date" v-model="form.date" required /></label> <div class="form-actions">
+          <label class="form-label-item">日付：<input type="date" v-model="form.date" required /></label>
+          <div class="form-actions">
             <button type="submit" class="add-button">{{ form.id ? '更新' : '追加' }}</button>
             <button v-if="form.id" @click="cancelEdit" type="button" class="cancel-button">ｷｬﾝｾﾙ</button>
           </div>
@@ -64,13 +65,12 @@ const props = defineProps({
 });
 const emit = defineEmits(['submit', 'delete', 'edit', 'cancelEdit']);
 
-// 日本標準時で現在の日付を 'YYYY-MM-DD' 形式で取得する関数
 const getJSTDateString = () => {
   const now = new Date(Date.now() + ((new Date().getTimezoneOffset() + (9 * 60)) * 60 * 1000));
   return now.toISOString().slice(0, 10);
 };
 
-const createEmptyForm = () => ({ id: null, type: '支出', category: '', name: '', amount: null, date: getJSTDateString() }); // ★日付のデフォルト値を追加★
+const createEmptyForm = () => ({ id: null, type: '支出', category: '', name: '', amount: null, date: getJSTDateString() });
 const form = reactive(createEmptyForm());
 
 watch(() => props.recordToEdit, (newVal) => {
@@ -78,10 +78,8 @@ watch(() => props.recordToEdit, (newVal) => {
 }, { deep: true });
 
 const handleSubmit = () => {
-  // id がない場合 (新規作成) は、idとdateは親コンポーネント (FormPage) で設定する
-  // id がある場合 (編集) は、既存のidとdateをそのまま使用する
   emit('submit', { ...form });
-  if (!form.id) { // 新規作成後のみフォームをリセット
+  if (!form.id) {
     Object.assign(form, createEmptyForm());
   }
 };
@@ -106,8 +104,6 @@ const getCategoryColor = (categoryName, type) => {
 /* 各フォーム/リストを囲むカード状のコンテナ */
 .input-form-card,
 .list-container.transaction-list-area {
-  /* component-containerから持ってくるスタイルを定義し、
-     TransactionManagerの親のcomponent-containerと重複しないように調整 */
   background-color: #fff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
@@ -136,9 +132,10 @@ const getCategoryColor = (categoryName, type) => {
   color: #2c3e50;
 }
 
-.transaction-form-layout input, /* input, select のセレクタも変更 */
+/* input と select のスタイルを調整して、カレンダーマークが見やすくなるようにする */
+.transaction-form-layout input,
 .transaction-form-layout select {
-  padding: 0.6rem;
+  padding: 0.8rem; /* 縦パディングを増やす */
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 1rem;
@@ -146,6 +143,15 @@ const getCategoryColor = (categoryName, type) => {
   box-sizing: border-box;
   background-color: #f8f8f8;
   color: #2c3e50;
+  height: 40px; /* 明示的に高さを設定し、アイコン領域を確保 */
+  line-height: 1; /* テキストの垂直方向の位置を調整 */
+}
+
+/* 日付入力フィールドの特別な調整 */
+.transaction-form-layout input[type="date"] {
+  /* ブラウザのデフォルトスタイルに依存するため、直接アイコンの色やサイズ変更は難しい */
+  /* paddingを調整して、アイコンがコンテンツと被らないようにする */
+  padding-right: 10px; /* アイコンの領域を確保 */
 }
 
 .form-actions {

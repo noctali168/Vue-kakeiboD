@@ -16,6 +16,16 @@
             @update:goal="updateGoalAmount"
             @update:achievement-rate="currentAchievementRate = $event"
           />
+          <div class="reward-button-area">
+            <button
+              @click="displayReward"
+              :disabled="currentAchievementRate < 100"
+              class="reward-button"
+            >
+              ご褒美をもらう！
+            </button>
+            <p v-if="currentAchievementRate < 100" class="reward-hint">目標達成でご褒美がもらえます！</p>
+          </div>
         </div>
 
         <div class="card-inner kuji-block">
@@ -23,23 +33,40 @@
         </div>
       </div>
 
-      <SummaryArea
-        :expense-data="monthlyExpensesByCategory"
-        :income-data="monthlyIncomesByCategory"
-        :categories="categories"
-        :records="records"
-        class="content-right"
-      />
+      <div class="content-right card-container summary-chart-container">
+        <div class="month-navigation">
+          <button @click="prevGraphMonth" class="nav-button">＜</button>
+          <div class="month-year-inputs">
+            <input type="number" v-model.number="selectedGraphYear" class="year-input" min="2000" max="2100" />年
+            <input type="number" v-model.number="selectedGraphMonth" class="month-input" min="1" max="12" />月
+          </div>
+          <button @click="nextGraphMonth" class="nav-button">＞</button>
+        </div>
+
+        <SummaryArea
+          :expense-data="monthlyExpensesByCategoryForGraph"
+          :income-data="monthlyIncomesByCategoryForGraph"
+          :categories="categories"
+          :records="records"
+          :selected-year="selectedGraphYear"   
+          :selected-month="selectedGraphMonth" 
+          class="summary-area-component"
+        />
+      </div>
     </div>
 
     <Calender />
     <NavCards /> 
     <Reminder />
+
+    <transition name="fade">
+      <div v-if="showRewardOverlay" class="reward-overlay"></div>
+    </transition>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import Header from '../components/Header.vue'
 import CharacterSection from '../components/CharacterSection.vue'
 import SummaryArea from '../components/SummaryArea.vue'
@@ -64,68 +91,44 @@ const goalAmount = ref(50000);
 const currentAchievementRate = ref(0);
 
 const username = ref('');
-onMounted(() => {
-  username.value = localStorage.getItem('kakeibo-username') || '';
-});
-
+const showRewardOverlay = ref(false);
 
 const getJSTDate = () => new Date(Date.now() + ((new Date().getTimezoneOffset() + (9 * 60)) * 60 * 1000));
+const currentJSTYear = ref(getJSTDate().getFullYear());
+const currentJSTMonth = ref(getJSTDate().getMonth() + 1);
 
-const monthlyExpensesByCategory = computed(() => {
-  const currentMonth = getJSTDate().toISOString().slice(0, 7);
-  const expenses = {};
-  records.value
-    .filter(r => r.date.startsWith(currentMonth) && r.type === '支出')
-    .forEach(record => {
-      const category = record.category;
-      const amount = Number(record.amount) || 0;
-      if (expenses[category]) {
-        expenses[category] += amount;
-      } else {
-        expenses[category] = amount;
-      }
-    });
-  return expenses;
-});
+// グラフ表示用の年月 (ユーザーが変更する)
+const selectedGraphYear = ref(currentJSTYear.value);
+const selectedGraphMonth = ref(currentJSTMonth.value);
 
-const monthlyIncomesByCategory = computed(() => {
-  const currentMonth = getJSTDate().toISOString().slice(0, 7);
-  const incomes = {};
-  records.value
-    .filter(r => r.date.startsWith(currentMonth) && r.type === '収入')
-    .forEach(record => {
-      const category = record.category;
-      const amount = Number(record.amount) || 0;
-      if (incomes[category]) {
-        incomes[category] += amount;
-      } else {
-        incomes[category] = amount;
-      }
-    });
-  return incomes;
-});
+// 月を変更する関数 (グラフ表示用)
+const prevGraphMonth = () => {
+  if (selectedGraphMonth.value === 1) {
+    selectedGraphMonth.value = 12;
+    selectedGraphYear.value -= 1;
+  } else {
+    selectedGraphMonth.value -= 1;
+  }
+};
 
-const monthlyIncome = computed(() => {
-  const currentMonth = getJSTDate().toISOString().slice(0, 7);
-  return records.value.filter(r => r.date.startsWith(currentMonth) && r.type === '収入').reduce((sum, record) => sum + (Number(record.amount) || 0), 0);
-});
+const nextGraphMonth = () => {
+  if (selectedGraphMonth.value === 12) {
+    selectedGraphMonth.value = 1;
+    selectedGraphYear.value += 1;
+  } else {
+    selectedGraphMonth.value += 1;
+  }
+};
 
-const monthlyExpense = computed(() => {
-  const currentMonth = getJSTDate().toISOString().slice(0, 7);
-  return records.value.filter(r => r.date.startsWith(currentMonth) && r.type === '支出').reduce((sum, record) => sum + (Number(record.amount) || 0), 0);
-});
 
-const balance = computed(() => monthlyIncome.value - monthlyExpense.value);
-
-const achievementRate = computed(() => {
-  if (goalAmount.value <= 0) return 0;
-  return (balance.value / goalAmount.value) * 100;
-});
-
-// GoalTrackerからの目標金額更新イベントを処理
-const updateGoalAmount = (newGoal) => {
-  goalAmount.value = newGoal;
-  localStorage.setItem('kakeibo-goal', newGoal);
+// ご褒美ボタンが押された時の処理
+const displayReward = () => {
+  if (currentAchievementRate.value >= 100) {
+    showRewardOverlay.value = true;
+    setTimeout(() => {
+      showRewardOverlay.value = false;
+    }, 3000); // 3秒後に画像を非表示にする
+  }
 };
 
 
@@ -144,6 +147,77 @@ onMounted(() => {
   }
   username.value = localStorage.getItem('kakeibo-username') || '';
 });
+
+
+// 「現在の月」のデータ (GoalTrackerなどに影響)
+const filteredRecordsForCurrentMonth = computed(() => {
+  const ym = `${currentJSTYear.value}-${String(currentJSTMonth.value).padStart(2, '0')}`;
+  return records.value.filter(r => r.date.startsWith(ym));
+});
+
+const monthlyIncome = computed(() => {
+  return filteredRecordsForCurrentMonth.value
+    .filter(r => r.type === '収入')
+    .reduce((sum, record) => sum + (Number(record.amount) || 0), 0);
+});
+
+const monthlyExpense = computed(() => {
+  return filteredRecordsForCurrentMonth.value
+    .filter(r => r.type === '支出')
+    .reduce((sum, record) => sum + (Number(record.amount) || 0), 0);
+});
+
+const balance = computed(() => monthlyIncome.value - monthlyExpense.value);
+
+const achievementRate = computed(() => {
+  if (goalAmount.value <= 0) return 0;
+  return (balance.value / goalAmount.value) * 100;
+});
+
+
+// 「グラフ表示用」のデータ
+const filteredRecordsForGraphMonth = computed(() => {
+  const ym = `${selectedGraphYear.value}-${String(selectedGraphMonth.value).padStart(2, '0')}`;
+  return records.value.filter(r => r.date.startsWith(ym));
+});
+
+const monthlyExpensesByCategoryForGraph = computed(() => {
+  const expenses = {};
+  filteredRecordsForGraphMonth.value
+    .filter(r => r.type === '支出')
+    .forEach(record => {
+      const category = record.category;
+      const amount = Number(record.amount) || 0;
+      if (expenses[category]) {
+        expenses[category] += amount;
+      } else {
+        expenses[category] = amount;
+      }
+    });
+  return expenses;
+});
+
+const monthlyIncomesByCategoryForGraph = computed(() => {
+  const incomes = {};
+  filteredRecordsForGraphMonth.value
+    .filter(r => r.type === '収入')
+    .forEach(record => {
+      const category = record.category;
+      const amount = Number(record.amount) || 0;
+      if (incomes[category]) {
+        incomes[category] += amount;
+      } else {
+        incomes[category] = amount;
+      }
+    });
+  return incomes;
+});
+
+
+const updateGoalAmount = (newGoal) => {
+  goalAmount.value = newGoal;
+  localStorage.setItem('kakeibo-goal', newGoal);
+};
 </script>
 
 <style scoped>
@@ -153,6 +227,7 @@ onMounted(() => {
   padding: calc(72px + 2rem) 2rem 2rem;
   min-height: calc(100vh - 72px);
   box-sizing: border-box;
+  position: relative; /* オーバーレイの基準点として設定 */
 }
 
 .main-content-row {
@@ -198,12 +273,6 @@ onMounted(() => {
   /* .card-innerの共通スタイルを継承しつつ、必要に応じて調整 */
 }
 
-/* ★削除★ mini-goal-summaryブロックはHomePageから削除します
-.goal-summary-block {
-  border-bottom: none;
-}
-*/
-
 /* くじ引きのブロックのスタイル */
 .kuji-block {
   border-top: 1px solid #e0e0e0; /* 上の要素との間に線を追加 */
@@ -214,7 +283,7 @@ onMounted(() => {
   align-items: center;
 }
 
-/* ★追加・修正：GoalTrackerをカードとして大きく表示するためのスタイル★ */
+/* GoalTrackerをカードとして大きく表示するためのスタイル */
 .goal-tracker-full-block {
   border-top: 1px solid #e0e0e0; /* 上の要素との間に線を追加 */
   flex-grow: 1; /* 残りのスペースを埋める */
@@ -224,6 +293,39 @@ onMounted(() => {
   align-items: center;
   padding: 1.5rem; /* GoalTrackerコンポーネントが直接持つpaddingと重複しないように調整 */
 }
+
+/* ご褒美ボタンエリアのスタイル */
+.reward-button-area {
+  margin-top: 1.5rem;
+  text-align: center;
+  width: 100%;
+}
+
+.reward-button {
+  padding: 0.8rem 1.5rem;
+  font-size: 1.1rem;
+  background-color: #ff9800; /* オレンジ色 */
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.reward-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.reward-button:hover:not(:disabled) {
+  background-color: #f57c00;
+}
+
+.reward-hint {
+  font-size: 0.9em;
+  color: #666;
+  margin-top: 0.8rem;
+}
+
 
 /* CharacterSectionのマージンとボーダーを調整 */
 :deep(.character-section) {
@@ -240,63 +342,76 @@ onMounted(() => {
     margin-bottom: 0;
 }
 
-/* ★削除★ mini-goal-summary のスタイルもHomePageから削除します
-.mini-goal-summary {
-  margin-top: 1.5rem;
-  border-top: 1px solid #eee;
-  padding-top: 1rem;
-  display: flex;
-  justify-content: space-between;
-  color: #2c3e50;
-  flex-wrap: wrap;
-}
-
-.mini-goal-summary .summary-item {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 45%;
-  min-width: 120px;
-  box-sizing: border-box;
-  padding: 0.2rem 0;
-}
-
-.mini-goal-summary .summary-item.goal-amount-display {
-  order: -1;
-  flex: 1 1 100%;
-  text-align: center;
-  margin-bottom: 0.8rem;
-}
-
-.mini-goal-summary .summary-item.text-right {
-  text-align: right;
-}
-
-.mini-goal-summary .label {
-  font-size: 0.9em;
-  opacity: 0.8;
-}
-
-.mini-goal-summary .value {
-  font-size: 1.2em;
-  font-weight: bold;
-}
-
-.mini-goal-summary .value.income {
-  color: #1abc9c;
-}
-.mini-goal-summary .value.expense {
-  color: #dc3545;
-}
-.mini-goal-summary .value.achievement {
-  color: #1abc9c;
-}
-*/
-
 .content-right {
   flex: 1;
   min-width: 300px;
   margin-top: 0;
 }
+
+/* SummaryAreaを囲む新しいカードコンテナのスタイル */
+.summary-chart-container {
+  /* ここでcontent-rightのスタイルを上書きまたは追加調整 */
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem; /* SummaryArea内部のpaddingと競合しないように調整 */
+}
+
+/* 月切り替えナビゲーションのスタイル */
+.month-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  font-size: 1.2rem;
+  color: #2c3e50;
+  font-weight: bold;
+}
+
+.month-navigation .nav-button {
+  background-color: #f0f2f5;
+  color: #2c3e50;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-weight: normal;
+  font-size: 1rem;
+}
+.month-navigation .nav-button:hover {
+  background-color: #e0e0e0;
+}
+/* 年月入力フィールドのスタイル */
+.month-year-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.month-year-inputs input {
+  width: 60px; /* 年入力の幅 */
+  text-align: center;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+  color: #2c3e50;
+  /* ★ここを変更★ 背景色と文字色を調整 */
+  background-color: #f0f2f5; /* 明るいグレーの背景 */
+  color: #2c3e50; /* 濃い文字色 */
+}
+.month-year-inputs .month-input {
+  width: 40px; /* 月入力の幅 */
+}
+
+
+/* SummaryAreaコンポーネント自体のスタイル調整 */
+.summary-area-component {
+  /* 親のsummary-chart-containerがpaddingを持つため、ここでpaddingをリセット */
+  padding: 0;
+  border: none;
+  box-shadow: none;
+  margin-bottom: 0;
+}
+
 
 /* :deep()スタイルの一部は.card-inner内で調整するため、ここでは削除または上書き */
 :deep(.season-display),
@@ -367,21 +482,51 @@ onMounted(() => {
     padding: 0;
     padding-bottom: 1rem;
   }
-  /* ★削除★ mini-goal-summary のモバイルスタイルも削除
-  .mini-goal-summary {
-    margin-top: 1rem;
-    padding-top: 1rem;
-  }
-  .mini-goal-summary .summary-item {
-    flex: 1 1 100%;
-    text-align: center;
-  }
-  .mini-goal-summary .summary-item.goal-amount-display {
-    text-align: center;
-  }
-  */
   .kuji-block {
     padding: 1rem;
   }
+
+  /* summary-chart-container のモバイル調整 */
+  .summary-chart-container {
+    padding: 1rem;
+  }
+
+  /* 月入力のモバイル調整 */
+  .month-navigation {
+    flex-wrap: wrap; /* 折り返す */
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  .month-year-inputs {
+    flex-basis: 100%; /* 全幅を占める */
+    justify-content: center;
+    margin-top: 0.5rem;
+  }
+}
+
+/* ご褒美オーバーレイのスタイル */
+.reward-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.8); /* 半透明の黒背景 */
+  background-image: url('/saito.png'); /* 指定された画像 */
+  background-size: contain; /* 画像を中央に収まるように表示 */
+  background-repeat: no-repeat;
+  background-position: center;
+  z-index: 9999; /* 他の要素より手前に表示 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* トランジション（フェードイン・アウト） */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.5s;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
 }
 </style>
