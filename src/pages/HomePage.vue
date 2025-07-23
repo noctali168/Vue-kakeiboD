@@ -34,23 +34,9 @@
       </div>
 
       <div class="content-right card-container summary-chart-container">
-        <div class="month-navigation">
-          <button @click="prevGraphMonth" class="nav-button">＜</button>
-          <div class="month-year-inputs">
-            <input type="number" v-model.number="selectedGraphYear" class="year-input" min="2000" max="2100" />年
-            <input type="number" v-model.number="selectedGraphMonth" class="month-input" min="1" max="12" />月
-          </div>
-          <button @click="nextGraphMonth" class="nav-button">＞</button>
-        </div>
-
         <SummaryArea
-          :expense-data="monthlyExpensesByCategoryForGraph"
-          :income-data="monthlyIncomesByCategoryForGraph"
           :categories="categories"
-          :records="records"
-          :selected-year="selectedGraphYear"   
-          :selected-month="selectedGraphMonth" 
-          class="summary-area-component"
+          :records="records" class="summary-area-component"
         />
       </div>
     </div>
@@ -97,28 +83,13 @@ const getJSTDate = () => new Date(Date.now() + ((new Date().getTimezoneOffset() 
 const currentJSTYear = ref(getJSTDate().getFullYear());
 const currentJSTMonth = ref(getJSTDate().getMonth() + 1);
 
-// グラフ表示用の年月 (ユーザーが変更する)
-const selectedGraphYear = ref(currentJSTYear.value);
-const selectedGraphMonth = ref(currentJSTMonth.value);
+// ★削除★ グラフ表示用の年月 (SummaryArea.vueに移動)
+// const selectedGraphYear = ref(currentJSTYear.value);
+// const selectedGraphMonth = ref(currentJSTMonth.value);
 
-// 月を変更する関数 (グラフ表示用)
-const prevGraphMonth = () => {
-  if (selectedGraphMonth.value === 1) {
-    selectedGraphMonth.value = 12;
-    selectedGraphYear.value -= 1;
-  } else {
-    selectedGraphMonth.value -= 1;
-  }
-};
-
-const nextGraphMonth = () => {
-  if (selectedGraphMonth.value === 12) {
-    selectedGraphMonth.value = 1;
-    selectedGraphYear.value += 1;
-  } else {
-    selectedGraphMonth.value += 1;
-  }
-};
+// ★削除★ 月を変更する関数 (SummaryArea.vueに移動)
+// const prevGraphMonth = () => { ... };
+// const nextGraphMonth = () => { ... };
 
 
 // ご褒美ボタンが押された時の処理
@@ -149,7 +120,7 @@ onMounted(() => {
 });
 
 
-// 「現在の月」のデータ (GoalTrackerなどに影響)
+// 「現在の月」のデータ (GoalTrackerなどに影響) - 変更なし
 const filteredRecordsForCurrentMonth = computed(() => {
   const ym = `${currentJSTYear.value}-${String(currentJSTMonth.value).padStart(2, '0')}`;
   return records.value.filter(r => r.date.startsWith(ym));
@@ -175,43 +146,10 @@ const achievementRate = computed(() => {
 });
 
 
-// 「グラフ表示用」のデータ
-const filteredRecordsForGraphMonth = computed(() => {
-  const ym = `${selectedGraphYear.value}-${String(selectedGraphMonth.value).padStart(2, '0')}`;
-  return records.value.filter(r => r.date.startsWith(ym));
-});
-
-const monthlyExpensesByCategoryForGraph = computed(() => {
-  const expenses = {};
-  filteredRecordsForGraphMonth.value
-    .filter(r => r.type === '支出')
-    .forEach(record => {
-      const category = record.category;
-      const amount = Number(record.amount) || 0;
-      if (expenses[category]) {
-        expenses[category] += amount;
-      } else {
-        expenses[category] = amount;
-      }
-    });
-  return expenses;
-});
-
-const monthlyIncomesByCategoryForGraph = computed(() => {
-  const incomes = {};
-  filteredRecordsForGraphMonth.value
-    .filter(r => r.type === '収入')
-    .forEach(record => {
-      const category = record.category;
-      const amount = Number(record.amount) || 0;
-      if (incomes[category]) {
-        incomes[category] += amount;
-      } else {
-        incomes[category] = amount;
-      }
-    });
-  return incomes;
-});
+// ★削除★ 「グラフ表示用」のデータはSummaryArea.vueで直接計算
+// const filteredRecordsForGraphMonth = computed(() => { ... });
+// const monthlyExpensesByCategoryForGraph = computed(() => { ... });
+// const monthlyIncomesByCategoryForGraph = computed(() => { ... });
 
 
 const updateGoalAmount = (newGoal) => {
@@ -356,7 +294,8 @@ const updateGoalAmount = (newGoal) => {
   padding: 1.5rem; /* SummaryArea内部のpaddingと競合しないように調整 */
 }
 
-/* 月切り替えナビゲーションのスタイル */
+/* 月切り替えナビゲーションのスタイルはHomePage.vueからは削除 */
+/*
 .month-navigation {
   display: flex;
   justify-content: space-between;
@@ -380,27 +319,25 @@ const updateGoalAmount = (newGoal) => {
 .month-navigation .nav-button:hover {
   background-color: #e0e0e0;
 }
-/* 年月入力フィールドのスタイル */
 .month-year-inputs {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 .month-year-inputs input {
-  width: 60px; /* 年入力の幅 */
+  width: 60px;
   text-align: center;
   padding: 0.3rem 0.5rem;
   border: 1px solid #ddd;
   border-radius: 5px;
   font-size: 1rem;
   color: #2c3e50;
-  /* ★ここを変更★ 背景色と文字色を調整 */
-  background-color: #f0f2f5; /* 明るいグレーの背景 */
-  color: #2c3e50; /* 濃い文字色 */
+  background-color: #f0f2f5;
 }
 .month-year-inputs .month-input {
-  width: 40px; /* 月入力の幅 */
+  width: 40px;
 }
+*/
 
 
 /* SummaryAreaコンポーネント自体のスタイル調整 */
@@ -492,13 +429,13 @@ const updateGoalAmount = (newGoal) => {
   }
 
   /* 月入力のモバイル調整 */
-  .month-navigation {
-    flex-wrap: wrap; /* 折り返す */
+  .month-navigation { /* このスタイルはHomePage.vueからは削除 */
+    flex-wrap: wrap;
     justify-content: center;
     gap: 0.5rem;
   }
-  .month-year-inputs {
-    flex-basis: 100%; /* 全幅を占める */
+  .month-year-inputs { /* このスタイルはHomePage.vueからは削除 */
+    flex-basis: 100%;
     justify-content: center;
     margin-top: 0.5rem;
   }
