@@ -1,5 +1,7 @@
 <template>
   <div class="kakeibo-app">
+    <AchievementNotifier :achievements="newlyUnlocked" />
+
     <GoalTracker
       :goal-amount="goalAmount"
       :total-income="monthlyIncome"
@@ -16,6 +18,9 @@
       </button>
       <button @click="visibleSection = 'categories'" :class="{ active: visibleSection === 'categories' }">
         カテゴリの管理
+      </button>
+      <button @click="visibleSection = 'achievements'" :class="{ active: visibleSection === 'achievements' }">
+        アチーブメント
       </button>
     </div>
     <div v-show="visibleSection === 'transactions'">
@@ -43,15 +48,26 @@
         @update="updateCategories"
       />
     </div>
+    <div v-show="visibleSection === 'achievements'">
+      <AchievementList
+        :all-achievements="allAchievements"
+        :unlocked-ids="unlockedAchievements"
+      />
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import CategoryManager from '../components/CategoryManager.vue';
 import RecurringManager from '../components/RecurringManager.vue';
 import TransactionManager from '../components/TransactionManager.vue';
 import GoalTracker from '../components/GoalTracker.vue';
+// --- ここから追加 ---
+import AchievementList from '../components/AchievementList.vue';
+import AchievementNotifier from '../components/AchievementNotifier.vue';
+import { achievements as allAchievements } from '../lib/achievements.js';
+// --- ここまで追加 ---
 
 const visibleSection = ref('transactions');
 const recurringItems = ref([]);
@@ -68,6 +84,11 @@ const categories = ref({
 const goalAmount = ref(50000);
 const currentAchievementRate = ref(0);
 
+// --- ここから追加 ---
+const unlockedAchievements = ref(new Set());
+const newlyUnlocked = ref([]);
+// --- ここまで追加 ---
+
 const getJSTDate = () => new Date(Date.now() + ((new Date().getTimezoneOffset() + (9 * 60)) * 60 * 1000));
 const monthlyIncome = computed(() => {
   const currentMonth = getJSTDate().toISOString().slice(0, 7);
@@ -82,20 +103,47 @@ const updateRecords = (updatedRecords) => { records.value = updatedRecords.sort(
 const updateCategories = (updatedCategories) => { categories.value = updatedCategories; localStorage.setItem('kakeibo-categories', JSON.stringify(updatedCategories)); };
 const updateGoalAmount = (newGoal) => { goalAmount.value = newGoal; localStorage.setItem('kakeibo-goal', newGoal); };
 const logRecurringItem = (item) => {
-  // 定期的な項目は、ログした日付で記録されるべきなので、ここでは getJSTDate() を使う
   const newRecord = { id: `rec_${Date.now()}`, date: getJSTDate().toISOString().slice(0, 10), type: item.type, recurringId: item.id, name: item.name, amount: item.amount, category: '固定費' };
   updateRecords([newRecord, ...records.value]);
 };
 
-// ★ここを修正します★
+// --- ここから追加 ---
+const checkAchievements = () => {
+  const dataForCheck = {
+    records: records.value,
+    recurringItems: recurringItems.value,
+    categories: categories.value,
+    currentAchievementRate: currentAchievementRate.value,
+  };
+
+  const justUnlocked = [];
+  for (const ach of allAchievements) {
+    if (!unlockedAchievements.value.has(ach.id) && ach.condition(dataForCheck)) {
+      unlockedAchievements.value.add(ach.id);
+      justUnlocked.push(ach);
+    }
+  }
+
+  if (justUnlocked.length > 0) {
+    newlyUnlocked.value.push(...justUnlocked);
+    localStorage.setItem('kakeibo-unlocked-achievements', JSON.stringify(Array.from(unlockedAchievements.value)));
+
+    // 5秒後に通知を消す
+    setTimeout(() => {
+      newlyUnlocked.value = newlyUnlocked.value.filter(n => !justUnlocked.some(j => j.id === n.id));
+    }, 5000);
+  }
+};
+
+// 状態を監視してアチーブメントをチェック
+watch([records, recurringItems, categories, currentAchievementRate], checkAchievements, { deep: true });
+// --- ここまで追加 ---
+
 const handleTransactionSubmit = (submittedRecord) => {
   let updatedRecords;
   if (submittedRecord.id) {
-    // 既存レコードの更新
     updatedRecords = records.value.map(r => r.id === submittedRecord.id ? submittedRecord : r);
   } else {
-    // 新規レコードの追加
-    // TransactionManagerから渡された日付 (submittedRecord.date) をそのまま使用する
     updatedRecords = [{ ...submittedRecord, id: `rec_${Date.now()}` }, ...records.value];
   }
   updateRecords(updatedRecords);
@@ -104,6 +152,7 @@ const handleTransactionSubmit = (submittedRecord) => {
 
 const deleteTransaction = (id) => { updateRecords(records.value.filter(r => r.id !== id)); };
 const handleTransactionEdit = (record) => { recordToEdit.value = record; };
+
 onMounted(() => {
   const savedGoal = localStorage.getItem('kakeibo-goal');
   if (savedGoal) goalAmount.value = Number(savedGoal);
@@ -113,24 +162,29 @@ onMounted(() => {
   if (recItemData) recurringItems.value = JSON.parse(recItemData);
   const recData = localStorage.getItem('kakeibo-records');
   if (recData) records.value = JSON.parse(recData);
+
+  // --- ここから追加 ---
+  // アチーブメントデータのロード
+  const savedAchievements = localStorage.getItem('kakeibo-unlocked-achievements');
+  if (savedAchievements) {
+    unlockedAchievements.value = new Set(JSON.parse(savedAchievements));
+  }
+  // 初回ロード時にもチェックを実行
+  checkAchievements();
+  // --- ここまで追加 ---
 });
 </script>
 
 <style>
 body { background-color: #f0f2f5; font-family: sans-serif; }
-/* ★ここを修正します★ */
 .kakeibo-app {
   max-width: 900px;
-  /* margin: 0 auto; はそのまま */
   margin: 0 auto;
-  /* ヘッダーとの重なりを解消するためのpadding-top */
-  /* ヘッダーの高さ（約72px）+ 必要に応じたコンテンツ上部の余白（例: 2rem）*/
   padding-top: calc(72px + 2rem);
-  padding-left: 1rem; /* 左右のpaddingも追加 */
+  padding-left: 1rem;
   padding-right: 1rem;
-  padding-bottom: 2rem; /* 下のpaddingも追加 */
-  
-  box-sizing: border-box; /* paddingを含めてサイズが計算されるようにする */
+  padding-bottom: 2rem;
+  box-sizing: border-box;
 }
 .component-container { background-color: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 1.5rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
 button { border: none; padding: 0.6rem 1.2rem; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; transition: opacity 0.2s; }
@@ -141,6 +195,25 @@ input, select { padding: 0.8rem; border: 1px solid #ddd; border-radius: 8px; fon
 <style scoped>
 .view-selector { display: flex; margin-bottom: 2rem; border-radius: 8px; overflow: hidden; border: 1px solid #0d6efd; }
 .view-selector button { flex-grow: 1; padding: 1rem; background-color: #fff; color: #0d6efd; border: none; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: all 0.2s; }
+/* ボタンが4つになったため、フォントサイズを少し調整 */
+@media (min-width: 769px) {
+  .view-selector button {
+    font-size: 1.1rem;
+  }
+}
+@media (max-width: 768px) {
+  .view-selector {
+    flex-direction: column;
+  }
+  .view-selector button {
+    font-size: 1rem;
+    border-bottom: 1px solid #0d6efd;
+  }
+  .view-selector button:last-child {
+    border-bottom: none;
+  }
+}
+
 .view-selector button.active { background-color: #0d6efd; color: white; }
 .view-selector button:not(.active):hover { background-color: #e7f1ff; }
 </style>
