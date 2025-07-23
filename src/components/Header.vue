@@ -7,7 +7,7 @@
 
     <nav class="nav-menu">
       <router-link to="/" class="nav-item">ホーム</router-link>
-      <router-link to="/form" class="nav-item">収支</router-link>
+      <router-link to="/form" class="nav-item">収支入力</router-link>
       <router-link to="/list" class="nav-item">記録</router-link>
       <router-link to="/notify" class="nav-item">設定</router-link>
     </nav>
