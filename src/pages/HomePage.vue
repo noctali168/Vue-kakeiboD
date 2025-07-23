@@ -5,27 +5,17 @@
     <div class="main-content-row">
       <div class="content-left card-container">
         <div class="card-inner character-block">
-          <CharacterSection />
+          <CharacterSection :username="username" />
         </div>
         
-        <div class="card-inner goal-summary-block">
-          <div class="mini-goal-summary">
-            <div class="summary-item goal-amount-display">
-              <span class="label">目標金額</span>
-              <span class="value">{{ goalAmount.toLocaleString() }} 円</span>
-            </div>
-
-            <div class="summary-item">
-              <span class="label">現在の収支</span>
-              <span class="value" :class="balance >= 0 ? 'income' : 'expense'">
-                {{ balance.toLocaleString() }} 円
-              </span>
-            </div>
-            <div class="summary-item text-right">
-              <span class="label">達成率</span>
-              <span class="value achievement">{{ achievementRate.toFixed(1) }} %</span>
-            </div>
-          </div>
+        <div class="card-inner goal-tracker-full-block">
+          <GoalTracker
+            :goal-amount="goalAmount"
+            :total-income="monthlyIncome"
+            :total-expense="monthlyExpense"
+            @update:goal="updateGoalAmount"
+            @update:achievement-rate="currentAchievementRate = $event"
+          />
         </div>
 
         <div class="card-inner kuji-block">
@@ -37,12 +27,13 @@
         :expense-data="monthlyExpensesByCategory"
         :income-data="monthlyIncomesByCategory"
         :categories="categories"
+        :records="records"
         class="content-right"
       />
     </div>
 
-    <NavCards />
     <Calender />
+    <NavCards /> 
     <Reminder />
   </div>
 </template>
@@ -56,6 +47,7 @@ import NavCards from '../components/NavCards.vue'
 import Kuji from '../components/Kuji.vue'
 import Reminder from '../components/Reminder.vue'
 import Calender from '../components/Calender.vue'
+import GoalTracker from '../components/GoalTracker.vue'
 
 
 const records = ref([]);
@@ -69,6 +61,13 @@ const categories = ref({
 });
 
 const goalAmount = ref(50000);
+const currentAchievementRate = ref(0);
+
+const username = ref('');
+onMounted(() => {
+  username.value = localStorage.getItem('kakeibo-username') || '';
+});
+
 
 const getJSTDate = () => new Date(Date.now() + ((new Date().getTimezoneOffset() + (9 * 60)) * 60 * 1000));
 
@@ -123,6 +122,12 @@ const achievementRate = computed(() => {
   return (balance.value / goalAmount.value) * 100;
 });
 
+// GoalTrackerからの目標金額更新イベントを処理
+const updateGoalAmount = (newGoal) => {
+  goalAmount.value = newGoal;
+  localStorage.setItem('kakeibo-goal', newGoal);
+};
+
 
 onMounted(() => {
   const recData = localStorage.getItem('kakeibo-records');
@@ -137,6 +142,7 @@ onMounted(() => {
   if (savedGoal) {
     goalAmount.value = Number(savedGoal);
   }
+  username.value = localStorage.getItem('kakeibo-username') || '';
 });
 </script>
 
@@ -192,16 +198,15 @@ onMounted(() => {
   /* .card-innerの共通スタイルを継承しつつ、必要に応じて調整 */
 }
 
-/* 目標金額サマリーのブロックのスタイル */
+/* ★削除★ mini-goal-summaryブロックはHomePageから削除します
 .goal-summary-block {
-  /* .card-innerの共通スタイルを継承しつつ、必要に応じて調整 */
-  border-bottom: none; /* ★ここを修正します★ 不要な下線を削除 */
+  border-bottom: none;
 }
+*/
 
 /* くじ引きのブロックのスタイル */
 .kuji-block {
-  /* .card-innerの共通スタイルを継承しつつ、必要に応じて調整 */
-  border-top: 1px solid #e0e0e0; /* ★ここを修正します★ 目標金額サマリーとの間に線を追加 */
+  border-top: 1px solid #e0e0e0; /* 上の要素との間に線を追加 */
   flex-grow: 1;
   display: flex;
   flex-direction: column;
@@ -209,6 +214,16 @@ onMounted(() => {
   align-items: center;
 }
 
+/* ★追加・修正：GoalTrackerをカードとして大きく表示するためのスタイル★ */
+.goal-tracker-full-block {
+  border-top: 1px solid #e0e0e0; /* 上の要素との間に線を追加 */
+  flex-grow: 1; /* 残りのスペースを埋める */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 1.5rem; /* GoalTrackerコンポーネントが直接持つpaddingと重複しないように調整 */
+}
 
 /* CharacterSectionのマージンとボーダーを調整 */
 :deep(.character-section) {
@@ -225,10 +240,10 @@ onMounted(() => {
     margin-bottom: 0;
 }
 
-
+/* ★削除★ mini-goal-summary のスタイルもHomePageから削除します
 .mini-goal-summary {
-  margin-top: 1.5rem; /* CharacterSectionとmini-goal-summaryの間の余白を調整 */
-  border-top: 1px solid #eee; /* CharacterSectionとの間に線を追加 */
+  margin-top: 1.5rem;
+  border-top: 1px solid #eee;
   padding-top: 1rem;
   display: flex;
   justify-content: space-between;
@@ -275,7 +290,7 @@ onMounted(() => {
 .mini-goal-summary .value.achievement {
   color: #1abc9c;
 }
-
+*/
 
 .content-right {
   flex: 1;
@@ -352,20 +367,21 @@ onMounted(() => {
     padding: 0;
     padding-bottom: 1rem;
   }
+  /* ★削除★ mini-goal-summary のモバイルスタイルも削除
   .mini-goal-summary {
     margin-top: 1rem;
     padding-top: 1rem;
   }
-  .kuji-block {
-    padding: 1rem;
-  }
-
   .mini-goal-summary .summary-item {
     flex: 1 1 100%;
     text-align: center;
   }
   .mini-goal-summary .summary-item.goal-amount-display {
     text-align: center;
+  }
+  */
+  .kuji-block {
+    padding: 1rem;
   }
 }
 </style>

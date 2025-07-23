@@ -3,7 +3,9 @@
     <h3>日々の記録</h3>
     
     <div class="transaction-manager-grid">
-      <div class="input-form-card component-container"> <form @submit.prevent="handleSubmit" class="transaction-form-layout"> <label class="form-label-item">区分：
+      <div class="input-form-card component-container">
+        <form @submit.prevent="handleSubmit" class="transaction-form-layout">
+          <label class="form-label-item">区分：
             <select v-model="form.type" required @change="form.category = ''">
               <option value="支出">支出</option>
               <option value="収入">収入</option>
@@ -17,7 +19,7 @@
           </label>
           <label class="form-label-item">品目：<input v-model="form.name" required /></label>
           <label class="form-label-item">金額：<input type="number" v-model.number="form.amount" required /></label>
-          <div class="form-actions">
+          <label class="form-label-item">日付：<input type="date" v-model="form.date" required /></label> <div class="form-actions">
             <button type="submit" class="add-button">{{ form.id ? '更新' : '追加' }}</button>
             <button v-if="form.id" @click="cancelEdit" type="button" class="cancel-button">ｷｬﾝｾﾙ</button>
           </div>
@@ -54,13 +56,38 @@
 
 <script setup>
 import { reactive, watch } from 'vue';
-const props = defineProps({ records: { type: Array, required: true }, recordToEdit: { type: Object, default: null }, categories: { type: Object, required: true } });
+
+const props = defineProps({
+  records: { type: Array, required: true },
+  recordToEdit: { type: Object, default: null },
+  categories: { type: Object, required: true }
+});
 const emit = defineEmits(['submit', 'delete', 'edit', 'cancelEdit']);
-const createEmptyForm = () => ({ id: null, type: '支出', category: '', name: '', amount: null });
+
+// 日本標準時で現在の日付を 'YYYY-MM-DD' 形式で取得する関数
+const getJSTDateString = () => {
+  const now = new Date(Date.now() + ((new Date().getTimezoneOffset() + (9 * 60)) * 60 * 1000));
+  return now.toISOString().slice(0, 10);
+};
+
+const createEmptyForm = () => ({ id: null, type: '支出', category: '', name: '', amount: null, date: getJSTDateString() }); // ★日付のデフォルト値を追加★
 const form = reactive(createEmptyForm());
-watch(() => props.recordToEdit, (newVal) => { Object.assign(form, newVal || createEmptyForm()); }, { deep: true });
-const handleSubmit = () => { emit('submit', { ...form }); if (!form.id) { Object.assign(form, createEmptyForm()); }};
+
+watch(() => props.recordToEdit, (newVal) => {
+  Object.assign(form, newVal || createEmptyForm());
+}, { deep: true });
+
+const handleSubmit = () => {
+  // id がない場合 (新規作成) は、idとdateは親コンポーネント (FormPage) で設定する
+  // id がある場合 (編集) は、既存のidとdateをそのまま使用する
+  emit('submit', { ...form });
+  if (!form.id) { // 新規作成後のみフォームをリセット
+    Object.assign(form, createEmptyForm());
+  }
+};
+
 const cancelEdit = () => emit('cancelEdit');
+
 const getCategoryColor = (categoryName, type) => {
   const category = props.categories[type]?.find(c => c.name === categoryName);
   return category ? category.color : '#cccccc';

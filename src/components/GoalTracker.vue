@@ -1,6 +1,5 @@
 <template>
-  <div class="component-container goal-tracker">
-    <h3>今月の目標達成率</h3>
+  <div class="goal-tracker"> <h3>今月の目標達成率</h3>
     <div class="goal-setting">
       <span>目標金額：</span>
       <input type="number" min="1" v-model.number="localGoal" @change="updateGoal" />円
@@ -67,13 +66,16 @@ watch(achievementRate, (newRate) => {
 
 <style scoped>
 .goal-tracker {
-  background: #ffffff;
+  /* 親の card-inner が背景色、ボーダー、シャドウを持つため、ここではリセット */
+  background: transparent; /* 背景色を透明に */
   color: #2c3e50;
-  border-radius: 8px;
-  padding: 1.5rem 2rem;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-  border: 1px solid #e0e0e0;
-  margin-bottom: 2rem;
+  border-radius: 0; /* 角丸も親に任せる */
+  padding: 0; /* 親の card-inner の padding を使用 */
+  box-shadow: none; /* 親に任せる */
+  border: none; /* 親に任せる */
+  margin-bottom: 0; /* 親のレイアウトで調整 */
+  width: 100%; /* 親の幅を埋める */
+  box-sizing: border-box; /* パディングを含めて幅を計算 */
 }
 
 h3 { margin-top: 0; text-align: center; font-weight: 600; margin-bottom: 1.5rem; }
@@ -94,8 +96,7 @@ h3 { margin-top: 0; text-align: center; font-weight: 600; margin-bottom: 1.5rem;
 .summary-item.text-right { text-align: right; }
 .label { font-size: 0.9em; opacity: 0.8; }
 .value { font-size: 1.4em; font-weight: bold; }
-/* ★ここを修正します★ */
-.value.income { color: #1abc9c; /* 収支（収入）の色を達成率と同じにする */ }
-.value.expense { color: #dc3545; /* 収支（支出）の色は変更なし */ }
+.value.income { color: #1abc9c; } /* 収支（収入）の色を達成率と同じにする */
+.value.expense { color: #dc3545; } /* 収支（支出）の色は変更なし */
 .value.achievement { color: #1abc9c; }
 </style>

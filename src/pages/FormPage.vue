@@ -82,19 +82,26 @@ const updateRecords = (updatedRecords) => { records.value = updatedRecords.sort(
 const updateCategories = (updatedCategories) => { categories.value = updatedCategories; localStorage.setItem('kakeibo-categories', JSON.stringify(updatedCategories)); };
 const updateGoalAmount = (newGoal) => { goalAmount.value = newGoal; localStorage.setItem('kakeibo-goal', newGoal); };
 const logRecurringItem = (item) => {
+  // 定期的な項目は、ログした日付で記録されるべきなので、ここでは getJSTDate() を使う
   const newRecord = { id: `rec_${Date.now()}`, date: getJSTDate().toISOString().slice(0, 10), type: item.type, recurringId: item.id, name: item.name, amount: item.amount, category: '固定費' };
   updateRecords([newRecord, ...records.value]);
 };
+
+// ★ここを修正します★
 const handleTransactionSubmit = (submittedRecord) => {
   let updatedRecords;
   if (submittedRecord.id) {
+    // 既存レコードの更新
     updatedRecords = records.value.map(r => r.id === submittedRecord.id ? submittedRecord : r);
   } else {
-    updatedRecords = [{ ...submittedRecord, id: `rec_${Date.now()}`, date: getJSTDate().toISOString().slice(0, 10) }, ...records.value];
+    // 新規レコードの追加
+    // TransactionManagerから渡された日付 (submittedRecord.date) をそのまま使用する
+    updatedRecords = [{ ...submittedRecord, id: `rec_${Date.now()}` }, ...records.value];
   }
   updateRecords(updatedRecords);
   recordToEdit.value = null;
 };
+
 const deleteTransaction = (id) => { updateRecords(records.value.filter(r => r.id !== id)); };
 const handleTransactionEdit = (record) => { recordToEdit.value = record; };
 onMounted(() => {
