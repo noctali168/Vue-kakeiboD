@@ -52,7 +52,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import Header from '../components/Header.vue'
 import CharacterSection from '../components/CharacterSection.vue'
 import SummaryArea from '../components/SummaryArea.vue'
@@ -62,103 +62,127 @@ import Reminder from '../components/Reminder.vue'
 import Calender from '../components/Calender.vue'
 import GoalTracker from '../components/GoalTracker.vue'
 
-
 const records = ref([]);
 const categories = ref({
-  支出: [
-    { name: '食費', color: '#FF6384' }, { name: '交通費', color: '#36A2EB' },
-    { name: '日用品', color: '#FFCE56' }, { name: '固定費', color: '#4BC0C0' },
-    { name: 'その他', color: '#C9CBCF' },
-  ],
-  収入: [ { name: '給与', color: '#9966FF' }, { name: '副業', color: '#FF9F40' } ]
+  支出: [],
+  収入: []
 });
-
 const goalAmount = ref(50000);
-const currentAchievementRate = ref(0);
-
 const username = ref('');
+
+const currentAchievementRate = ref(0);
 const showRewardOverlay = ref(false);
 
 const getJSTDate = () => new Date(Date.now() + ((new Date().getTimezoneOffset() + (9 * 60)) * 60 * 1000));
-const currentJSTYear = ref(getJSTDate().getFullYear());
-const currentJSTMonth = ref(getJSTDate().getMonth() + 1);
 
-// ★削除★ グラフ表示用の年月 (SummaryArea.vueに移動)
-// const selectedGraphYear = ref(currentJSTYear.value);
-// const selectedGraphMonth = ref(currentJSTMonth.value);
+// --- 固定費の自動登録ロジック ---
+const runAutoAddRecurringItems = () => {
+  const recurringItemsData = localStorage.getItem('kakeibo-recurring');
+  if (!recurringItemsData) return;
+  
+  const recurringItems = JSON.parse(recurringItemsData);
+  const autoAddItems = recurringItems.filter(item => item.isAutoAdd);
+  if (autoAddItems.length === 0) return;
 
-// ★削除★ 月を変更する関数 (SummaryArea.vueに移動)
-// const prevGraphMonth = () => { ... };
-// const nextGraphMonth = () => { ... };
+  const now = getJSTDate();
+  const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const lastRunMonth = localStorage.getItem('kakeibo-last-auto-add-month');
 
+  if (lastRunMonth === currentMonthStr) return; // 今月は実行済み
 
-// ご褒美ボタンが押された時の処理
-const displayReward = () => {
-  if (currentAchievementRate.value >= 100) {
-    showRewardOverlay.value = true;
-    setTimeout(() => {
-      showRewardOverlay.value = false;
-    }, 3000); // 3秒後に画像を非表示にする
+  const currentRecords = JSON.parse(localStorage.getItem('kakeibo-records') || '[]');
+  const newRecords = [];
+
+  autoAddItems.forEach(item => {
+    const recordId = `auto_${item.id}_${currentMonthStr}`;
+    const alreadyExists = currentRecords.some(r => r.id === recordId);
+    if (!alreadyExists) {
+      newRecords.push({
+        id: recordId,
+        date: `${currentMonthStr}-01`,
+        type: item.type,
+        name: `${item.name} (自動)`,
+        amount: item.amount,
+        category: '固定費',
+        recurringId: item.id,
+      });
+    }
+  });
+
+  if (newRecords.length > 0) {
+    const updatedRecords = [...newRecords, ...currentRecords].sort((a, b) => new Date(b.date) - new Date(a.date));
+    localStorage.setItem('kakeibo-records', JSON.stringify(updatedRecords));
+    records.value = updatedRecords; // 画面に反映
   }
+
+  localStorage.setItem('kakeibo-last-auto-add-month', currentMonthStr);
 };
 
 
 onMounted(() => {
+  // まず自動登録を実行
+  runAutoAddRecurringItems();
+
+  // その後、データを読み込む
   const recData = localStorage.getItem('kakeibo-records');
-  if (recData) {
-    records.value = JSON.parse(recData);
-  }
+  if (recData) records.value = JSON.parse(recData).sort((a, b) => new Date(b.date) - new Date(a.date));
+
   const catData = localStorage.getItem('kakeibo-categories');
   if (catData) {
     categories.value = JSON.parse(catData);
+  } else {
+    // デフォルトカテゴリを設定
+    categories.value = {
+      支出: [
+        { name: '食費', color: '#FF6384' }, { name: '交通費', color: '#36A2EB' },
+        { name: '日用品', color: '#FFCE56' }, { name: 'その他', color: '#C9CBCF' },
+      ],
+      収入: [ { name: '給与', color: '#9966FF' }, { name: '副業', color: '#FF9F40' } ]
+    };
   }
+  // 固定費カテゴリがなければ追加
+  if (!categories.value.支出.some(c => c.name === '固定費')) {
+    categories.value.支出.push({ name: '固定費', color: '#4BC0C0' });
+  }
+
   const savedGoal = localStorage.getItem('kakeibo-goal');
-  if (savedGoal) {
-    goalAmount.value = Number(savedGoal);
-  }
+  if (savedGoal) goalAmount.value = Number(savedGoal);
+
   username.value = localStorage.getItem('kakeibo-username') || '';
 });
 
-
-// 「現在の月」のデータ (GoalTrackerなどに影響) - 変更なし
-const filteredRecordsForCurrentMonth = computed(() => {
-  const ym = `${currentJSTYear.value}-${String(currentJSTMonth.value).padStart(2, '0')}`;
-  return records.value.filter(r => r.date.startsWith(ym));
-});
-
 const monthlyIncome = computed(() => {
-  return filteredRecordsForCurrentMonth.value
-    .filter(r => r.type === '収入')
+  const currentMonth = getJSTDate().toISOString().slice(0, 7);
+  return records.value
+    .filter(r => r.date.startsWith(currentMonth) && r.type === '収入')
     .reduce((sum, record) => sum + (Number(record.amount) || 0), 0);
 });
 
 const monthlyExpense = computed(() => {
-  return filteredRecordsForCurrentMonth.value
-    .filter(r => r.type === '支出')
+  const currentMonth = getJSTDate().toISOString().slice(0, 7);
+  return records.value
+    .filter(r => r.date.startsWith(currentMonth) && r.type === '支出')
     .reduce((sum, record) => sum + (Number(record.amount) || 0), 0);
 });
-
-const balance = computed(() => monthlyIncome.value - monthlyExpense.value);
-
-const achievementRate = computed(() => {
-  if (goalAmount.value <= 0) return 0;
-  return (balance.value / goalAmount.value) * 100;
-});
-
-
-// ★削除★ 「グラフ表示用」のデータはSummaryArea.vueで直接計算
-// const filteredRecordsForGraphMonth = computed(() => { ... });
-// const monthlyExpensesByCategoryForGraph = computed(() => { ... });
-// const monthlyIncomesByCategoryForGraph = computed(() => { ... });
-
 
 const updateGoalAmount = (newGoal) => {
   goalAmount.value = newGoal;
   localStorage.setItem('kakeibo-goal', newGoal);
 };
+
+const displayReward = () => {
+  if (currentAchievementRate.value >= 100) {
+    showRewardOverlay.value = true;
+    setTimeout(() => {
+      showRewardOverlay.value = false;
+    }, 3000);
+  }
+};
 </script>
 
 <style scoped>
+/* スタイルは変更なし */
+/* ...（既存のスタイルをそのままコピー）... */
 .container {
   max-width: 1400px;
   margin: 0 auto;
@@ -294,52 +318,6 @@ const updateGoalAmount = (newGoal) => {
   padding: 1.5rem; /* SummaryArea内部のpaddingと競合しないように調整 */
 }
 
-/* 月切り替えナビゲーションのスタイルはHomePage.vueからは削除 */
-/*
-.month-navigation {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  font-size: 1.2rem;
-  color: #2c3e50;
-  font-weight: bold;
-}
-
-.month-navigation .nav-button {
-  background-color: #f0f2f5;
-  color: #2c3e50;
-  padding: 0.5rem 1rem;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  font-weight: normal;
-  font-size: 1rem;
-}
-.month-navigation .nav-button:hover {
-  background-color: #e0e0e0;
-}
-.month-year-inputs {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-.month-year-inputs input {
-  width: 60px;
-  text-align: center;
-  padding: 0.3rem 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 1rem;
-  color: #2c3e50;
-  background-color: #f0f2f5;
-}
-.month-year-inputs .month-input {
-  width: 40px;
-}
-*/
-
-
 /* SummaryAreaコンポーネント自体のスタイル調整 */
 .summary-area-component {
   /* 親のsummary-chart-containerがpaddingを持つため、ここでpaddingをリセット */
@@ -426,18 +404,6 @@ const updateGoalAmount = (newGoal) => {
   /* summary-chart-container のモバイル調整 */
   .summary-chart-container {
     padding: 1rem;
-  }
-
-  /* 月入力のモバイル調整 */
-  .month-navigation { /* このスタイルはHomePage.vueからは削除 */
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.5rem;
-  }
-  .month-year-inputs { /* このスタイルはHomePage.vueからは削除 */
-    flex-basis: 100%;
-    justify-content: center;
-    margin-top: 0.5rem;
   }
 }
 

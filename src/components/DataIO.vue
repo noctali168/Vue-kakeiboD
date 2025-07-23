@@ -49,6 +49,7 @@ const STORAGE_KEYS = [
   'kuji-last-date',
   'kuji-result-label',
   'kuji-result-image',
+  'kakeibo-unlocked-achievements',
 ];
 
 /**
