@@ -3,7 +3,14 @@
   <div class="calendar">
     <div class="nav">
       <button @click="prevMonth">＜ 前の月</button>
-      <h2>{{ currentYear }}年{{ currentMonth }}月</h2>
+      <div class="nav-center">
+        <select v-model.number="currentYear">
+          <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}年</option>
+        </select>
+        <select v-model.number="currentMonth">
+          <option v-for="m in 12" :key="m" :value="m">{{ m }}月</option>
+        </select>
+      </div>
       <button @click="nextMonth">次の月 ＞</button>
     </div>
     <div class="grid">
@@ -56,6 +63,9 @@ import BackHomeLink from '../components/BackHome.vue';
 const now = new Date();
 const currentYear = ref(now.getFullYear());
 const currentMonth = ref(now.getMonth() + 1);
+const currentYearRaw = new Date().getFullYear();
+const yearOptions = Array.from({ length: 6 }, (_, i) => currentYearRaw - 3 + i); // 例: 3年前〜2年後
+
 
 const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
 const records = ref([]);
@@ -158,6 +168,20 @@ const dayRecords = computed(() => {
 }
 .nav button:hover {
   background-color: #e0e0e0;
+}
+.nav-center {
+  display: flex;
+  gap: 1.0rem;
+  align-items: center;
+}
+.nav select {
+  padding: 0.6rem 0.6rem;
+  border-radius: 7px;
+  border: 1px solid #ccc;
+  background-color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  min-width: 6rem;
 }
 h2 {
   text-align: center;
