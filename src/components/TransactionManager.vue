@@ -87,7 +87,8 @@ const handleSubmit = () => {
 const cancelEdit = () => emit('cancelEdit');
 
 const getCategoryColor = (categoryName, type) => {
-  const category = props.categories[type]?.find(c => c.name === categoryName);
+  const categoryType = props.categories[type] || [];
+  const category = categoryType.find(c => c.name === categoryName);
   return category ? category.color : '#cccccc';
 };
 </script>
@@ -132,10 +133,10 @@ const getCategoryColor = (categoryName, type) => {
   color: #2c3e50;
 }
 
-/* input と select のスタイルを調整して、カレンダーマークが見やすくなるようにする */
+/* ★★★★★ ここを修正しました ★★★★★ */
 .transaction-form-layout input,
 .transaction-form-layout select {
-  padding: 0.8rem; /* 縦パディングを増やす */
+  padding: 0.8rem;
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 1rem;
@@ -143,14 +144,10 @@ const getCategoryColor = (categoryName, type) => {
   box-sizing: border-box;
   background-color: #f8f8f8;
   color: #2c3e50;
-  height: 40px; /* 明示的に高さを設定し、アイコン領域を確保 */
-  line-height: 1; /* テキストの垂直方向の位置を調整 */
 }
 
 /* 日付入力フィールドの特別な調整 */
 .transaction-form-layout input[type="date"] {
-  /* ブラウザのデフォルトスタイルに依存するため、直接アイコンの色やサイズ変更は難しい */
-  /* paddingを調整して、アイコンがコンテンツと被らないようにする */
   padding-right: 10px; /* アイコンの領域を確保 */
 }
 
