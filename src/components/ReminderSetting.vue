@@ -42,8 +42,8 @@ import { reactive, ref, onMounted } from 'vue'
 const SETTINGS_KEY = 'kakeibo-reminder-settings'
 
 const defaultSettings = {
-  enabled: false, // ★ここを変更します: デフォルトでチェックを外す
-  monthStart: false, // ★ここを変更します: デフォルトでチェックを外す
+  enabled: false,
+  monthStart: false,
   days: [],
   time: '09:00',
 }
@@ -66,9 +66,7 @@ onMounted(() => {
     const raw = localStorage.getItem(SETTINGS_KEY)
     if (raw) {
       const parsed = JSON.parse(raw)
-      // localStorageに保存された設定があればそれを使うが、
-      // なければdefaultSettings（enabled: false, monthStart: false）が適用される
-      Object.assign(settings, defaultSettings, parsed); 
+      Object.assign(settings, defaultSettings, parsed)
     }
   } catch (e) {
     console.warn('設定読み込み失敗', e)
@@ -83,7 +81,20 @@ function saveSettings() {
 
 function testNotify() {
   requestPermission().then(() => {
-    showNotification('テスト通知', 'これはリマインダーのテストです。')
+    const now = new Date()
+    const today = now.getDay() // 0(日)〜6(土)
+
+    let message = ''
+
+    if (settings.monthStart && now.getDate() === 1) {
+      message = '📅 今月の家計簿記入をお忘れなく！'
+    } else if (settings.days.includes(today)) {
+      message = '📝 今日の家計簿を記録しましょう！'
+    } else {
+      message = '🔔 リマインダーは有効ですが、今日は通知日ではありません（設定に基づくテスト）'
+    }
+
+    showNotification('家計簿リマインダー（テスト）', message)
   })
 }
 
@@ -96,12 +107,16 @@ function requestPermission() {
 
 function showNotification(title, body) {
   if ('Notification' in window && Notification.permission === 'granted') {
-    new Notification(title, { body })
+    new Notification(title, {
+      body,
+      icon: '/icons/icon-192.png' // 任意のパスでOK
+    })
   } else {
     alert(body)
   }
 }
 </script>
+
 
 <style scoped>
 .reminder-settings {
