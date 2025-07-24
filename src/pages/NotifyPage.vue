@@ -3,7 +3,7 @@
     <BackHome />
 
     <div class="notify-page-container component-container">
-      <h2>設定</h2>
+      <h2>npm設定</h2>
 
       <section class="accordion">
         <header @click="toggleSection('name')" class="accordion-header">
